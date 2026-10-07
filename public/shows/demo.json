@@ -1,0 +1,23 @@
+{
+  "title": "Spooky Organ Singing Show",
+  "bpm": 120,
+  "description": "3-pumpkin musical show modeled on Kirk Yuhnke / Haunted Mansion singing busts.",
+  "cues": [
+    { "t": 0.4, "puppet": "center", "open": 0.75, "hold": 0.35, "look": "center", "text": "This is" },
+    { "t": 0.8, "puppet": "center", "open": 0.90, "hold": 0.40, "eyes": "wide", "text": "Halloween!" },
+    { "t": 1.4, "puppet": "left", "open": 0.80, "hold": 0.30, "look": "center", "text": "Pumpkins" },
+    { "t": 1.8, "puppet": "right", "open": 0.85, "hold": 0.35, "look": "center", "text": "scream in the" },
+    { "t": 2.2, "puppet": "all", "open": 0.95, "hold": 0.60, "eyes": "wide", "text": "DEAD OF NIGHT!" },
+    { "t": 2.9, "puppet": "all", "open": 0.05, "look": "center" },
+
+    { "t": 3.4, "puppet": "left", "open": 0.70, "hold": 0.25, "text": "Boys and" },
+    { "t": 3.7, "puppet": "left", "open": 0.85, "hold": 0.30, "text": "girls of" },
+    { "t": 4.0, "puppet": "center", "open": 0.90, "hold": 0.35, "eyes": "wide", "text": "every age," },
+    { "t": 4.5, "puppet": "right", "open": 0.80, "hold": 0.25, "text": "would you" },
+    { "t": 4.8, "puppet": "right", "open": 0.85, "hold": 0.35, "text": "like to see" },
+    { "t": 5.2, "puppet": "all", "open": 1.0, "hold": 0.70, "eyes": "wide", "action": "flame", "text": "SOMETHING STRANGE?" },
+
+    { "t": 6.2, "puppet": "left", "open": 0.05, "action": "wink" },
+    { "t": 6.8, "puppet": "all", "open": 0.0, "look": "center" }
+  ]
+}

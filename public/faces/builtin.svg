@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <!-- Builtin Jack-o'-Lantern Face -->
+  <!-- Left Eye Group -->
+  <g id="eye-l">
+    <polygon points="90,180 170,180 130,110" fill="#ffaa00" />
+  </g>
+
+  <!-- Right Eye Group -->
+  <g id="eye-r">
+    <polygon points="230,180 310,180 270,110" fill="#ffaa00" />
+  </g>
+
+  <!-- Left Pupil Group -->
+  <g id="pupil-l">
+    <circle cx="130" cy="155" r="14" fill="#ff4400" />
+  </g>
+
+  <!-- Right Pupil Group -->
+  <g id="pupil-r">
+    <circle cx="270" cy="155" r="14" fill="#ff4400" />
+  </g>
+
+  <!-- Left Eyelid Group -->
+  <g id="lid-l">
+    <!-- Semi-transparent or black polygon closing down -->
+    <path d="M 85 110 Q 130 90 175 110 L 170 140 Q 130 140 90 140 Z" fill="#000000" opacity="0" />
+  </g>
+
+  <!-- Right Eyelid Group -->
+  <g id="lid-r">
+    <path d="M 225 110 Q 270 90 315 110 L 310 140 Q 270 140 230 140 Z" fill="#000000" opacity="0" />
+  </g>
+
+  <!-- Left Eyebrow Group -->
+  <g id="brow-l">
+    <polygon points="80,105 170,118 165,108 85,95" fill="#ff8800" />
+  </g>
+
+  <!-- Right Eyebrow Group -->
+  <g id="brow-r">
+    <polygon points="320,105 230,118 235,108 315,95" fill="#ff8800" />
+  </g>
+
+  <!-- Mouth Interior Group -->
+  <g id="mouth-interior">
+    <path d="M 70 260 Q 200 360 330 260 Q 200 280 70 260 Z" fill="#440000" />
+  </g>
+
+  <!-- Teeth Group -->
+  <g id="teeth">
+    <!-- Top jagged teeth -->
+    <polygon points="140,264 155,282 170,265" fill="#ffdd66" />
+    <polygon points="230,265 245,282 260,264" fill="#ffdd66" />
+    <!-- Bottom jagged teeth -->
+    <polygon points="185,320 200,300 215,320" fill="#ffdd66" />
+  </g>
+
+  <!-- Lips Group (outer carved rim of mouth) -->
+  <g id="lips">
+    <path d="M 60 260 Q 200 375 340 260 Q 320 250 310 258 Q 200 340 90 258 Q 80 250 60 260 Z" fill="#ff7700" />
+  </g>
+</svg>

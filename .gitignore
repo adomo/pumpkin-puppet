@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production Build Output
+dist/
+build/
+.vite/
+
+# Local Videos & Media (Exclude personal/copyrighted videos, keep lightweight sample)
+public/videos/*
+!public/videos/sample-trio.mp4
+public/audio/*
+
+# Logs & Debugging
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Agent & System Scratch
+scratch/
+.system_generated/
+.agents/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+
+# OS Metadata & IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

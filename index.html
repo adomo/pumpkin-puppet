@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pumpkin Puppet — Halloween Projection Mapping Studio</title>
+  <meta name="description" content="Turn real physical pumpkins into living, singing, talking Halloween characters using browser-based projection mapping, keystone warping, and live voice DSP.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎃</text></svg>">
+  <style>
+    :root {
+      --bg: #0d0d12;
+      --card-bg: #15151e;
+      --card-border: #262635;
+      --accent: #ff7518;
+      --accent-glow: rgba(255, 117, 24, 0.4);
+      --accent-hover: #ff8c3a;
+      --text: #f3f3f8;
+      --text-muted: #9595a5;
+      --cyan: #00e5ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(255, 117, 24, 0.12) 0%, transparent 60%),
+        radial-gradient(circle at 80% 80%, rgba(0, 229, 255, 0.05) 0%, transparent 50%);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1080px;
+      padding: 48px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(255, 117, 24, 0.15);
+      border: 1px solid rgba(255, 117, 24, 0.3);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .hero-title {
+      font-size: clamp(36px, 6vw, 64px);
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #ffffff 40%, #ff8c3a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-muted);
+      max-width: 680px;
+    }
+
+    /* Main CTA Actions */
+    .cta-group {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 32px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+    }
+
+    .btn-stage {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 4px 24px var(--accent-glow);
+    }
+    .btn-stage:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px var(--accent-glow);
+    }
+
+    .btn-desk {
+      background: var(--card-bg);
+      color: #fff;
+      border: 1px solid var(--card-border);
+    }
+    .btn-desk:hover {
+      background: #20202d;
+      border-color: #44445c;
+      transform: translateY(-2px);
+    }
+
+    /* Steps Section */
+    .steps-section {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .steps-title {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+
+    .step-card {
+      background: #101017;
+      border: 1px solid #1f1f2c;
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 117, 24, 0.2);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .step-heading {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .step-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Feature Grid */
+    .features-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255, 117, 24, 0.4);
+    }
+
+    .feature-icon {
+      font-size: 32px;
+    }
+
+    .feature-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Coffee Support Banner */
+    .coffee-banner {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(255, 117, 24, 0.08) 0%, rgba(251, 191, 36, 0.04) 100%);
+      border: 1px solid rgba(255, 117, 24, 0.25);
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .coffee-content {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      max-width: 620px;
+    }
+
+    .coffee-icon {
+      font-size: 40px;
+      background: rgba(255, 117, 24, 0.15);
+      padding: 12px;
+      border-radius: 14px;
+    }
+
+    .coffee-text h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .coffee-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .btn-coffee {
+      background: #ff813f;
+      color: #ffffff;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 15px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 16px rgba(255, 129, 63, 0.3);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-coffee:hover {
+      background: #ff9359;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 129, 63, 0.45);
+    }
+
+    /* Footer */
+    footer {
+      width: 100%;
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid #1a1a24;
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Hero Header -->
+    <header class="hero">
+      <div class="hero-badge">
+        <span>🎃</span> Browser-Based Projection Mapping
+      </div>
+      <h1 class="hero-title">Pumpkin Puppet Studio</h1>
+      <p class="hero-subtitle">
+        Turn real physical pumpkins into living, singing, talking characters. Featuring real-time 4-corner keystone mapping, monster voice DSP, and AtmosFX video projection.
+      </p>
+
+      <div class="cta-group">
+        <a href="/stage" class="btn btn-stage" target="_blank" rel="noopener">
+          📽️ Launch Stage (/stage)
+        </a>
+        <a href="/desk" class="btn btn-desk" target="_blank" rel="noopener">
+          🎛️ Open Operator Desk (/desk)
+        </a>
+      </div>
+    </header>
+
+    <!-- Quick How It Works -->
+    <section class="steps-section">
+      <h2 class="steps-title">How to Set Up in 3 Simple Steps</h2>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3 class="step-heading">Connect Your Projector</h3>
+          <p class="step-desc">
+            Connect an HDMI projector to your laptop or cast a browser tab to Chromecast. Aim it directly at 1 to 3 real pumpkins.
+          </p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3 class="step-heading">Open Stage & Desk</h3>
+          <p class="step-desc">
+            Put <strong>/stage</strong> on the projector screen (pure pitch black canvas) and open <strong>/desk</strong> on your laptop screen.
+          </p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3 class="step-heading">Pin & Keystone Corners</h3>
+          <p class="step-desc">
+            Press <strong>M</strong> on the desk to view the alignment wireframe. Drag each pumpkin's 4 corners until the face fits the physical gourd!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Feature Highlights -->
+    <section class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📐</div>
+        <h3 class="feature-title">8×8 Bilinear Keystone Warping</h3>
+        <p class="feature-desc">
+          Independent 4-corner perspective pinning for Left, Center, and Right pumpkins. Compensates for uneven pumpkin heights, angles, and distances.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎙️</div>
+        <h3 class="feature-title">Monster Voice & Subwoofer DSP</h3>
+        <p class="feature-desc">
+          Granular pitch shifter (-12 to +6 st), 240Hz pumpkin cavity resonance, tube distortion growl, and low-shelf subwoofer boost (&lt; 90Hz).
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎬</div>
+        <h3 class="feature-title">Video Projection Show Mode</h3>
+        <p class="feature-desc">
+          Drop any local 16:9 video file (e.g. AtmosFX Jack-O'-Lantern Jamboree). Automatically splits into 3 keystoned pumpkin faces with soft radial edge feathering.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎭</div>
+        <h3 class="feature-title">Spoken Dialogue Conductor</h3>
+        <p class="feature-desc">
+          Automated multi-pumpkin comedy banter routines, jokes, musical singing choreographies, and particle venting effects (flames, smoke, lightning, soul wisps).
+        </p>
+      </div>
+    </section>
+
+    <!-- Buy Me a Coffee Support Banner -->
+    <section class="coffee-banner">
+      <div class="coffee-content">
+        <div class="coffee-icon">☕</div>
+        <div class="coffee-text">
+          <h3>Enjoying Pumpkin Puppet?</h3>
+          <p>
+            If this tool brought your Halloween show or front porch display to life, consider buying a coffee to support future spooky updates and features!
+          </p>
+        </div>
+      </div>
+      <a href="https://buymeacoffee.com/daramcgann" class="btn-coffee" target="_blank" rel="noopener">
+        <span>☕</span> Buy Me a Coffee
+      </a>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div>Pumpkin Puppet Studio &bull; 100% Client-Side Web Audio &amp; Canvas Engine &bull; Zero Backend Server</div>
+      <div>Designed for Halloween Projectors, TV Displays, and Chromecast</div>
+    </footer>
+  </div>
+</body>
+</html>

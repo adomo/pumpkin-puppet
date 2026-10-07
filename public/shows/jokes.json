@@ -1,0 +1,47 @@
+{
+  "title": "Three Pumpkins Joke Routine",
+  "bpm": 110,
+  "description": "Left, Center, and Right exchange Halloween jokes with reactions and laughs.",
+  "cues": [
+    { "t": 0.2, "puppet": "center", "look": "left" },
+    { "t": 0.4, "puppet": "right", "look": "left" },
+
+    { "t": 0.8, "puppet": "left", "open": 0.7, "hold": 0.22, "text": "Hey," },
+    { "t": 1.1, "puppet": "left", "open": 0.85, "hold": 0.35, "text": "guys!" },
+
+    { "t": 1.8, "puppet": "left", "open": 0.7, "hold": 0.22, "text": "Why" },
+    { "t": 2.1, "puppet": "left", "open": 0.6, "hold": 0.18, "text": "didn't" },
+    { "t": 2.4, "puppet": "left", "open": 0.9, "hold": 0.30, "text": "the skeleton" },
+    { "t": 2.8, "puppet": "left", "open": 0.6, "hold": 0.20, "text": "go to the" },
+    { "t": 3.1, "puppet": "left", "open": 0.85, "hold": 0.40, "text": "party?" },
+
+    { "t": 3.8, "puppet": "center", "open": 0.6, "hold": 0.25, "look": "left", "text": "I don't know..." },
+    { "t": 4.2, "puppet": "center", "open": 0.8, "hold": 0.30, "text": "Why?" },
+
+    { "t": 5.0, "puppet": "left", "open": 0.6, "hold": 0.18, "text": "Because" },
+    { "t": 5.3, "puppet": "left", "open": 0.7, "hold": 0.20, "text": "he had" },
+    { "t": 5.6, "puppet": "left", "open": 1.0, "hold": 0.50, "eyes": "wide", "text": "NO BODY" },
+    { "t": 6.3, "puppet": "left", "open": 0.65, "hold": 0.25, "text": "to go with!" },
+    { "t": 6.7, "puppet": "left", "action": "wink" },
+
+    { "t": 7.1, "puppet": "right", "open": 0.90, "hold": 0.25, "eyes": "wide", "text": "HA!" },
+    { "t": 7.4, "puppet": "right", "open": 0.80, "hold": 0.20, "text": "HA!" },
+    { "t": 7.7, "puppet": "right", "open": 0.95, "hold": 0.35, "text": "HA!" },
+
+    { "t": 8.3, "puppet": "center", "look": "right", "open": 0.6, "hold": 0.25, "text": "Oh please..." },
+    { "t": 8.7, "puppet": "center", "look": "center", "open": 0.8, "hold": 0.35, "text": "I got one." },
+
+    { "t": 9.4, "puppet": "center", "open": 0.7, "hold": 0.22, "text": "What" },
+    { "t": 9.7, "puppet": "center", "open": 0.6, "hold": 0.18, "text": "is a" },
+    { "t": 10.0, "puppet": "center", "open": 0.9, "hold": 0.30, "text": "ghost's" },
+    { "t": 10.4, "puppet": "center", "open": 0.7, "hold": 0.20, "text": "favorite" },
+    { "t": 10.7, "puppet": "center", "open": 0.85, "hold": 0.40, "text": "fruit?" },
+
+    { "t": 11.5, "puppet": "left", "open": 0.7, "hold": 0.25, "look": "center", "text": "BOO-berries!" },
+    { "t": 12.0, "puppet": "center", "open": 0.95, "hold": 0.45, "eyes": "wide", "text": "BOO-BERRIES!" },
+    { "t": 12.3, "puppet": "center", "action": "flame" },
+
+    { "t": 13.0, "puppet": "all", "open": 0.85, "hold": 0.45, "text": "HAPPY HALLOWEEN!" },
+    { "t": 14.0, "puppet": "all", "open": 0.0, "look": "center" }
+  ]
+}
