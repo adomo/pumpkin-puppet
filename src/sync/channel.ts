@@ -62,6 +62,12 @@ export type SyncMessage =
   | { type: 'TOGGLE_DIAGNOSTIC'; diag: 'grid' | 'black-card' | 'blackout' | 'mapping' }
   | { type: 'LOAD_SVG'; svgContent: string }
   | { type: 'SYNC_STATE_REQ' }
+  | { type: 'RTC_OFFER'; sdp: RTCSessionDescriptionInit }
+  | { type: 'RTC_ANSWER'; sdp: RTCSessionDescriptionInit }
+  | { type: 'RTC_ICE'; candidate: RTCIceCandidateInit; role: 'desk' | 'stage' }
+  | { type: 'RTC_REQUEST' }
+  | { type: 'SET_VOICE_VOLUME'; volume: number }
+  | { type: 'SET_VOICE_TRANSMIT'; enabled: boolean }
   | {
       type: 'SYNC_STATE_RESP';
       focus: PuppetSlot;

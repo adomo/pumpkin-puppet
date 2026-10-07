@@ -14,6 +14,7 @@ import {
 } from '../sync/storage';
 import { MicEngine } from '../audio/mic';
 import { showConductor } from '../show/conductor';
+import { AudioStreamBridge, BridgeConnectionState } from '../audio/stream-bridge';
 
 class DeskApp {
   private showMode: ShowMode = 'procedural';
@@ -29,6 +30,7 @@ class DeskApp {
   private activeProfileId: string = 'default';
   private mappingModeActive: boolean = false;
   private micEngine: MicEngine;
+  private streamBridge: AudioStreamBridge;
 
   // Mode Switcher DOM
   private tabModeProcedural!: HTMLButtonElement;
@@ -114,9 +116,11 @@ class DeskApp {
   private micStatusEl!: HTMLElement;
   private btnArmMic!: HTMLButtonElement;
   private chkMonitor!: HTMLInputElement;
+  private chkLocalMonitor!: HTMLInputElement;
   private btnToggleVoiceTransmit!: HTMLButtonElement;
   private btnVoiceCleanToggle!: HTMLButtonElement;
   private badgeVoiceTransmit!: HTMLElement;
+  private badgeCastAudio!: HTMLElement;
   private sliderMasterVoiceVol!: HTMLInputElement;
   private valMasterVoiceVol!: HTMLElement;
   private sliderGate!: HTMLInputElement;
@@ -186,6 +190,8 @@ class DeskApp {
     this.profiles = config.profiles;
     this.activeProfileId = config.activeProfileId;
     this.micEngine = new MicEngine(this.currentGate, this.currentSmoothness);
+    this.streamBridge = new AudioStreamBridge('desk');
+    this.streamBridge.onStateChange((st) => this.updateCastAudioStatus(st));
 
     this.bindDomElements();
     this.initEventListeners();
@@ -221,9 +227,11 @@ class DeskApp {
     this.micStatusEl = document.getElementById('mic-status')!;
     this.btnArmMic = document.getElementById('btn-arm-mic') as HTMLButtonElement;
     this.chkMonitor = document.getElementById('chk-monitor') as HTMLInputElement;
+    this.chkLocalMonitor = document.getElementById('chk-local-monitor') as HTMLInputElement;
     this.btnToggleVoiceTransmit = document.getElementById('btn-toggle-voice-transmit') as HTMLButtonElement;
     this.btnVoiceCleanToggle = document.getElementById('btn-voice-clean-toggle') as HTMLButtonElement;
     this.badgeVoiceTransmit = document.getElementById('badge-voice-transmit') as HTMLElement;
+    this.badgeCastAudio = document.getElementById('badge-cast-audio') as HTMLElement;
     this.sliderMasterVoiceVol = document.getElementById('slider-master-voice-vol') as HTMLInputElement;
     this.valMasterVoiceVol = document.getElementById('val-master-voice-vol') as HTMLElement;
     this.sliderGate = document.getElementById('slider-gate') as HTMLInputElement;
@@ -376,10 +384,16 @@ class DeskApp {
     this.btnArmMic.addEventListener('click', async () => {
       await this.micEngine.toggle();
       this.updateMicStatus(this.micEngine.isArmed);
+      await this.syncStreamBridge();
     });
 
-    // Monitor passthrough
-    this.chkMonitor.addEventListener('change', () => {
+    // Local Laptop Monitor toggle
+    this.chkLocalMonitor?.addEventListener('change', () => {
+      this.micEngine.setMonitor(this.chkLocalMonitor.checked);
+    });
+
+    // Monitor passthrough (internal compatibility)
+    this.chkMonitor?.addEventListener('change', () => {
       this.micEngine.setMonitor(this.chkMonitor.checked);
       this.updateVoiceTransmitUI();
       syncBus.send({ type: 'SET_MONITOR', enabled: this.chkMonitor.checked });
@@ -393,9 +407,8 @@ class DeskApp {
         this.updateMicStatus(this.micEngine.isArmed);
       }
       this.micEngine.setTransmission(willEnable);
-      this.chkMonitor.checked = willEnable;
       this.updateVoiceTransmitUI();
-      syncBus.send({ type: 'SET_MONITOR', enabled: willEnable });
+      await this.syncStreamBridge();
     });
 
     // Clean Passthrough Toggle (Clean vs Halloween DSP)
@@ -1566,14 +1579,14 @@ class DeskApp {
     const isClean = this.micEngine.isCleanPassthrough;
 
     if (isTransmitting) {
-      this.btnToggleVoiceTransmit.textContent = '🔊 Speaker Voice: ON';
+      this.btnToggleVoiceTransmit.textContent = '📢 Cast Voice to Stage: ON';
       this.btnToggleVoiceTransmit.classList.add('active');
       this.badgeVoiceTransmit.textContent = isClean ? 'Clean Active' : 'DSP Active';
       this.badgeVoiceTransmit.style.color = '#10b981';
       this.badgeVoiceTransmit.style.background = 'rgba(16, 185, 129, 0.15)';
       this.badgeVoiceTransmit.style.borderColor = 'rgba(16, 185, 129, 0.3)';
     } else {
-      this.btnToggleVoiceTransmit.textContent = '🔇 Send Voice to Speakers';
+      this.btnToggleVoiceTransmit.textContent = '🔇 Cast Voice to Stage: OFF';
       this.btnToggleVoiceTransmit.classList.remove('active');
       this.badgeVoiceTransmit.textContent = 'Muted';
       this.badgeVoiceTransmit.style.color = '#8e8e9a';
@@ -1589,6 +1602,37 @@ class DeskApp {
       this.btnVoiceCleanToggle.textContent = '🎃 Halloween DSP';
       this.btnVoiceCleanToggle.classList.remove('active');
       this.btnVoiceCleanToggle.style.borderColor = 'var(--border)';
+    }
+  }
+
+  private async syncStreamBridge(): Promise<void> {
+    const stream = (this.micEngine.isArmed && this.micEngine.transmissionEnabled)
+      ? this.micEngine.getOutputStream()
+      : null;
+    await this.streamBridge.setLocalStream(stream);
+  }
+
+  private updateCastAudioStatus(state: BridgeConnectionState): void {
+    if (!this.badgeCastAudio) return;
+    switch (state) {
+      case 'connected':
+        this.badgeCastAudio.textContent = 'Cast Audio: Linked';
+        this.badgeCastAudio.style.color = '#10b981';
+        this.badgeCastAudio.style.background = 'rgba(16, 185, 129, 0.15)';
+        this.badgeCastAudio.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        break;
+      case 'connecting':
+        this.badgeCastAudio.textContent = 'Cast Audio: Linking...';
+        this.badgeCastAudio.style.color = '#f59e0b';
+        this.badgeCastAudio.style.background = 'rgba(245, 158, 11, 0.15)';
+        this.badgeCastAudio.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        break;
+      default:
+        this.badgeCastAudio.textContent = 'Cast Audio: Standby';
+        this.badgeCastAudio.style.color = '#8e8e9a';
+        this.badgeCastAudio.style.background = 'rgba(255, 255, 255, 0.05)';
+        this.badgeCastAudio.style.borderColor = 'var(--border)';
+        break;
     }
   }
 
@@ -1885,6 +1929,7 @@ class DeskApp {
           e.preventDefault();
           await this.micEngine.toggle();
           this.updateMicStatus(this.micEngine.isArmed);
+          await this.syncStreamBridge();
           syncBus.send({ type: 'TRIGGER_ACTION', action: 'talk' });
           break;
         case 'F':

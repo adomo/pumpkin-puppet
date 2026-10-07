@@ -70,24 +70,37 @@ export class VideoManager {
     this.video.load();
   }
 
+  private targetVolume: number = 0.85;
+  private targetMuted: boolean = false;
+
   public async play(): Promise<void> {
     if (!this.video.paused && !this.video.ended && this.video.readyState >= 2) {
       return; // Already playing smoothly
     }
     try {
+      this.video.muted = this.targetMuted;
+      this.video.volume = this.targetVolume;
       await this.video.play();
       this.broadcastStatus();
     } catch (err) {
-      console.warn('Video play prevented or autoplay policy blocked:', err);
-      // Fallback: try muted play if audio policy blocked it
-      if (!this.video.muted) {
-        try {
-          this.video.muted = true;
-          await this.video.play();
-          this.broadcastStatus();
-        } catch (innerErr) {
-          console.error('Muted video playback also failed:', innerErr);
-        }
+      console.warn('Video unmuted playback blocked by browser autoplay policy:', err);
+      // Fallback: start video visually muted, but keep targetMuted so unlockAudio restores sound on user tap!
+      try {
+        this.video.muted = true;
+        await this.video.play();
+        this.broadcastStatus();
+      } catch (innerErr) {
+        console.error('Muted video playback also failed:', innerErr);
+      }
+    }
+  }
+
+  public unlockAudio(): void {
+    if (this.video) {
+      this.video.muted = this.targetMuted;
+      this.video.volume = this.targetVolume;
+      if (!this.video.paused) {
+        this.video.play().catch(() => {});
       }
     }
   }
@@ -111,7 +124,9 @@ export class VideoManager {
   }
 
   public setVolume(volume: number, muted: boolean): void {
-    this.video.volume = Math.max(0, Math.min(1.0, volume));
+    this.targetVolume = Math.max(0, Math.min(1.0, volume));
+    this.targetMuted = muted;
+    this.video.volume = this.targetVolume;
     this.video.muted = muted;
   }
 

@@ -9,6 +9,8 @@ export class MicEngine {
   private cleanGainNode: GainNode | null = null;
   private dspGainNode: GainNode | null = null;
   private masterGainNode: GainNode | null = null;
+  private localMonitorGainNode: GainNode | null = null;
+  private streamDestinationNode: MediaStreamAudioDestinationNode | null = null;
   public voiceTransformer: VoiceTransformer | null = null;
   public voiceConfig: VoiceConfig = { ...DEFAULT_VOICE_CONFIG };
 
@@ -16,10 +18,10 @@ export class MicEngine {
   public gate: number = 0.012; // Sensitive threshold for normal speech
   public smoothness: number = 0.25;
   public gain: number = 4.5; // Multiplier to comfortably open jaw
-  public monitorEnabled: boolean = false;
+  public monitorEnabled: boolean = false; // Local laptop monitor (defaults to false to prevent feedback)
 
   // Direct Voice Transmission & Master Volume Controls
-  public transmissionEnabled: boolean = false; // Voice to speakers toggle
+  public transmissionEnabled: boolean = true; // Voice to Stage/Speakers (enabled by default when armed)
   public isCleanPassthrough: boolean = true;   // True = Direct Mic (Clean / No Change), False = Halloween DSP
   public masterVolume: number = 1.0;          // 0.0 to 2.0 (100% default)
 
@@ -65,10 +67,19 @@ export class MicEngine {
 
         source.connect(this.analyser);
 
-        // Master Output Stage
+        // Master Output Stage (Clean or DSP voice)
         this.masterGainNode = this.audioCtx.createGain();
-        this.masterGainNode.gain.value = (this.transmissionEnabled || this.monitorEnabled) ? this.masterVolume : 0;
-        this.masterGainNode.connect(this.audioCtx.destination);
+        this.masterGainNode.gain.value = this.transmissionEnabled ? this.masterVolume : 0;
+
+        // Route A: MediaStream Destination for WebRTC Stage/Cast Audio Bridge
+        this.streamDestinationNode = this.audioCtx.createMediaStreamDestination();
+        this.masterGainNode.connect(this.streamDestinationNode);
+
+        // Route B: Local Laptop Monitor (Optional Mac laptop speakers)
+        this.localMonitorGainNode = this.audioCtx.createGain();
+        this.localMonitorGainNode.gain.value = this.monitorEnabled ? 1.0 : 0;
+        this.masterGainNode.connect(this.localMonitorGainNode);
+        this.localMonitorGainNode.connect(this.audioCtx.destination);
 
         // Path A: Direct Clean Mic Passthrough (Zero DSP, Zero Distortion, No Change)
         this.cleanGainNode = this.audioCtx.createGain();
@@ -109,16 +120,19 @@ export class MicEngine {
     }
   }
 
+  public getOutputStream(): MediaStream | null {
+    return this.streamDestinationNode ? this.streamDestinationNode.stream : null;
+  }
+
   public setMonitor(enabled: boolean): void {
     this.monitorEnabled = enabled;
-    this.transmissionEnabled = enabled;
     this.updateRouting();
   }
 
   public setTransmission(enabled: boolean): void {
     this.transmissionEnabled = enabled;
-    this.monitorEnabled = enabled;
     this.updateRouting();
+    syncBus.send({ type: 'SET_VOICE_TRANSMIT', enabled });
   }
 
   public setCleanPassthrough(clean: boolean): void {
@@ -129,6 +143,7 @@ export class MicEngine {
   public setMasterVolume(vol: number): void {
     this.masterVolume = Math.max(0, Math.min(2.5, vol));
     this.updateRouting();
+    syncBus.send({ type: 'SET_VOICE_VOLUME', volume: this.masterVolume });
   }
 
   private updateRouting(): void {
@@ -138,9 +153,12 @@ export class MicEngine {
     }
 
     const now = this.audioCtx.currentTime;
-    const targetMaster = (this.transmissionEnabled || this.monitorEnabled) ? this.masterVolume : 0;
+    const targetMaster = this.transmissionEnabled ? this.masterVolume : 0;
     if (this.masterGainNode) {
       this.masterGainNode.gain.setTargetAtTime(targetMaster, now, 0.02);
+    }
+    if (this.localMonitorGainNode) {
+      this.localMonitorGainNode.gain.setTargetAtTime(this.monitorEnabled ? 1.0 : 0, now, 0.02);
     }
 
     if (this.cleanGainNode && this.dspGainNode) {
@@ -170,6 +188,8 @@ export class MicEngine {
     this.cleanGainNode = null;
     this.dspGainNode = null;
     this.masterGainNode = null;
+    this.localMonitorGainNode = null;
+    this.streamDestinationNode = null;
     if (this.meterInterval) {
       clearInterval(this.meterInterval);
       this.meterInterval = null;

@@ -7,6 +7,7 @@ import { loadConfig, saveConfig, DEFAULT_TRANSFORMS, DEFAULT_CORNERS, AppConfig 
 import { faceLoader } from './face-loader';
 import { halloweenSynth } from '../audio/synth';
 import { VideoManager } from './video-manager';
+import { AudioStreamBridge } from '../audio/stream-bridge';
 
 class StageApp {
   private canvas: HTMLCanvasElement;
@@ -14,6 +15,14 @@ class StageApp {
   private mic: MicEngine;
   private config: AppConfig;
   private videoManager: VideoManager;
+  private streamBridge!: AudioStreamBridge;
+
+  private stageAudioCtx: AudioContext | null = null;
+  private stageVoiceGainNode: GainNode | null = null;
+  private stageAudioElement: HTMLAudioElement | null = null;
+  private voiceVolume: number = 1.0;
+  private voiceTransmitEnabled: boolean = true;
+  private isAudioUnlocked: boolean = false;
 
   private puppets: Record<PuppetSlot, Puppet>;
   private focusedSlot: PuppetSlot = 'center';
@@ -54,6 +63,8 @@ class StageApp {
     // Setup input & sync
     this.setupKeyboard();
     this.setupSyncBus();
+    this.setupAudioBridge();
+    this.setupAudioUnlock();
 
     // Start 60 FPS loop
     requestAnimationFrame((t) => this.loop(t));
@@ -318,6 +329,14 @@ class StageApp {
           break;
         case 'SET_MONITOR':
           this.mic.setMonitor(msg.enabled);
+          break;
+        case 'SET_VOICE_TRANSMIT':
+          this.voiceTransmitEnabled = msg.enabled;
+          this.updateStageVoiceGain();
+          break;
+        case 'SET_VOICE_VOLUME':
+          this.voiceVolume = msg.volume;
+          this.updateStageVoiceGain();
           break;
         case 'TOGGLE_SONG':
           halloweenSynth.toggleSong((puppet, open) => {
@@ -630,6 +649,116 @@ class StageApp {
     );
 
     requestAnimationFrame((t) => this.loop(t));
+  }
+
+  private getStageAudioContext(): AudioContext {
+    if (!this.stageAudioCtx) {
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      this.stageAudioCtx = new AudioContextClass();
+    }
+    return this.stageAudioCtx;
+  }
+
+  private updateStageVoiceGain(): void {
+    const targetGain = this.voiceTransmitEnabled ? this.voiceVolume : 0;
+    if (this.stageVoiceGainNode && this.stageAudioCtx) {
+      this.stageVoiceGainNode.gain.setTargetAtTime(targetGain, this.stageAudioCtx.currentTime, 0.02);
+    }
+    if (this.stageAudioElement) {
+      this.stageAudioElement.volume = Math.max(0, Math.min(1.0, targetGain));
+    }
+  }
+
+  private setupAudioBridge(): void {
+    this.streamBridge = new AudioStreamBridge('stage');
+    this.streamBridge.onRemoteStream((stream) => {
+      this.handleRemoteVoiceStream(stream);
+    });
+  }
+
+  private handleRemoteVoiceStream(stream: MediaStream): void {
+    // 1. Audio element playback (direct media stream playback, robust against suspended AudioContext)
+    if (!this.stageAudioElement) {
+      this.stageAudioElement = document.createElement('audio');
+      this.stageAudioElement.id = 'stage-remote-voice-audio';
+      this.stageAudioElement.autoplay = true;
+      (this.stageAudioElement as any).playsInline = true;
+      this.stageAudioElement.style.display = 'none';
+      document.body.appendChild(this.stageAudioElement);
+    }
+    this.stageAudioElement.srcObject = stream;
+    this.updateStageVoiceGain();
+    this.stageAudioElement.play().catch((err) => {
+      console.warn('Stage remote voice playback pending user gesture unlock:', err);
+    });
+
+    // 2. Web Audio routing for unified master stage gain
+    try {
+      const ctx = this.getStageAudioContext();
+      const source = ctx.createMediaStreamSource(stream);
+      if (!this.stageVoiceGainNode) {
+        this.stageVoiceGainNode = ctx.createGain();
+        this.updateStageVoiceGain();
+        this.stageVoiceGainNode.connect(ctx.destination);
+      }
+      source.connect(this.stageVoiceGainNode);
+    } catch (err) {
+      console.warn('Could not connect remote stream into Stage AudioContext:', err);
+    }
+  }
+
+  private setupAudioUnlock(): void {
+    const banner = document.createElement('div');
+    banner.id = 'stage-audio-unlock-banner';
+    banner.innerHTML = `
+      <div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; background: rgba(0,0,0,0.88); border: 2px solid #ff7518; color: #ff7518; padding: 12px 18px; border-radius: 10px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 20px rgba(255,117,24,0.35); user-select: none;">
+        <span style="font-size: 20px;">🔊</span>
+        <span>Click anywhere to enable Cast / Projector Audio</span>
+      </div>
+    `;
+    document.body.appendChild(banner);
+
+    const unlock = async () => {
+      if (this.isAudioUnlocked) return;
+      this.isAudioUnlocked = true;
+
+      if (banner.parentNode) {
+        banner.style.opacity = '0';
+        banner.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => banner.remove(), 350);
+      }
+
+      // Resume Stage AudioContext
+      const ctx = this.getStageAudioContext();
+      if (ctx.state === 'suspended') {
+        await ctx.resume().catch(() => {});
+      }
+
+      // Resume Halloween Synth
+      try {
+        halloweenSynth.getDelayNode();
+      } catch (_) {}
+
+      // Unlock Video Manager audio
+      this.videoManager.unlockAudio();
+
+      // Trigger remote voice element
+      if (this.stageAudioElement) {
+        this.stageAudioElement.play().catch(() => {});
+      }
+
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('keydown', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+
+    banner.addEventListener('click', (e) => {
+      e.stopPropagation();
+      unlock();
+    });
+    window.addEventListener('click', unlock);
+    window.addEventListener('keydown', unlock);
+    window.addEventListener('touchstart', unlock);
   }
 }
 
