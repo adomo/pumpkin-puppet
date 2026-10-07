@@ -54,11 +54,17 @@ Speak through your laptop microphone and watch the pumpkins speak in real time w
 ### 🎬 3. Video Projection Show Mode (AtmosFX & Custom Videos)
 Play local video files directly while keeping full keystone mapping on your physical pumpkins:
 * **Tri-Pumpkin Panoramic Split**: Automatically divides widescreen 16:9 videos (like AtmosFX *Jack-O'-Lantern Jamboree*) into Left ($0\% \to 33\%$), Center ($33\% \to 67\%$), and Right ($67\% \to 100\%$) pumpkin segments.
+* **Vertical Start & Height Framing**: Independently adjust vertical positioning (`Vertical Start: 0%–80%`) and height (`Vertical Height: 10%–100%`) for each pumpkin to dial in face framing.
 * **Independent Keystone Warping**: Each video pumpkin face maps directly into its assigned pumpkin's 4-corner perspective quad.
 * **Radial Edge Softening (Feather Vignette)**: Smooth radial falloff ($0\text{px} \to 50\text{px}$) eliminates rectangular video borders from projecting onto walls or hay bales.
 * **Drag-and-Drop Local File Loading**: Drop any `.mp4`, `.mov`, or `.webm` file into the desk for instant local playback via browser memory streams.
 
-### 🎭 4. Show & Jokes Conductor
+### 🎙️ 4. Clean Voice Passthrough & Master Voice Volume Booster
+* **Clean 1:1 Voice Passthrough Mode**: Bypass all pitch-shifting, script processors, and DSP filters at the click of a button for testing mic transmission without audio alteration.
+* **Master Voice Volume**: 0% to 250% gain booster to ensure voice projection cuts through outdoor ambient sound and projector fan noise.
+* **One-Click Speaker Routing**: Toggle voice audio transmission to house speakers instantly.
+
+### 🎭 5. Show & Jokes Conductor
 * **Automated Comedy Sketches**: Built-in 3-pumpkin banter routines (`jokes.json`) with synchronized jaw movements, eye saccades, and timed joke punchlines.
 * **Procedural Particle Effects**:
   * 🔥 **Flame Mouth & Eyes (`F` / `Shift+F`)**: Turbulent additive-blend fire tongues dancing inside mouth cavities.
@@ -79,7 +85,7 @@ Play local video files directly while keeping full keystone mapping on your phys
 ### Setup
 ```bash
 # 1. Clone repository
-git clone https://github.com/daramcgann/pumpkin-puppet.git
+git clone https://github.com/adomo/pumpkin-puppet.git
 cd pumpkin-puppet
 
 # 2. Install dependencies
@@ -108,18 +114,18 @@ Open your browser:
 
 ---
 
-## ⌨️ Stage Keyboard Shortcuts
+## ⌨️ Keyboard Shortcuts (Active on Both Desk & Stage)
 
-When the `/stage` window has focus:
+Shortcuts are actively captured on both the **Control Desk** (`/desk`) and the **Stage** (`/stage`):
 
 | Key | Action | Key | Action |
 | :--- | :--- | :--- | :--- |
-| `1` / `2` / `3` | Focus Left / Center / Right Pumpkin | `A` | Talk / Microphone Toggle |
+| `1` / `2` / `3` | Focus Left / Center / Right Pumpkin | `A` / `Space` | Arm / Talk Microphone Toggle |
 | `M` | Toggle Keystone Wireframe Overlay | `F` | Flame Mouth Particles |
 | `Tab` | Cycle Selected Keystone Corner | `Shift+F` | Eye Flames + Mouth Jet (Hold) |
 | `7` `8` `9` `0` | Select TL, TR, BL, BR Corner | `I` | Freeze / Thaw Mouth |
-| `Arrows` | Nudge Active Corner (1px) | `S` | Smoke Breath Puff |
-| `Shift+Arrows`| Nudge Whole Pumpkin (8px) | `Shift+S` | Scream + Shockwave Rings |
+| `Arrow Keys` | Nudge Selected Corner / Pumpkin Pos | `S` | Smoke Breath Puff |
+| `Shift+Arrows`| Large Nudge Step (16px) | `Shift+S` | Scream + Shockwave Rings |
 | `Alt+[` `]` | Scale Uniformly Down / Up | `L` | Double Lightning Eyes Strobe |
 | `Alt+Shift+[` `]`| Scale Height Down / Up | `G` | Soul Spirit Wisp Particle |
 | `,` `.` | Rotate Pumpkin Left / Right | `Z` | Sleep / Wake Toggle |
@@ -127,7 +133,17 @@ When the `/stage` window has focus:
 | `R` | Reset Position, Scale & Rotation | `←` `↓` `→` | Look Left / Center / Right |
 | `H` | Toggle Stage Calibration Grid | `C` | Call & Response Sequence |
 | `K` | Toggle Black-Level Test Card | `Enter` | Procedural Synth Song Play/Stop |
-| `B` / `Esc` | Panic Blackout (Clears in 2 frames) | `[` `]` | Noise Gate Down / Up |
+| `B` / `Esc` | Panic Blackout / Deselect Corner | `[` `]` | Noise Gate Down / Up |
+| `-` / `=` | Cast Latency Delay Down / Up | | |
+
+---
+
+## 📋 Latest Updates & Release Notes
+
+* **Vertical Framing for Video Split**: Full vertical positioning (`Vertical Start`) and height (`Vertical Height`) sliders for Left, Center, and Right pumpkins in Tri-Pumpkin Split mode.
+* **Friendly Labeling**: Renamed all technical `X` and `Y` coordinates to plain English `Horizontal` and `Vertical` across position, scale, keystone, and crop boundaries.
+* **Active Hotkeys on Operator Desk**: Wired all keyboard shortcuts directly to `/desk` so operators can control cues, nudges, and audio without needing to switch focus to the projector window.
+* **Clean Mic Passthrough & Master Volume**: Added zero-latency, 1:1 clean microphone transmission testing mode with a dedicated volume booster (0%–250%).
 
 ---
 
