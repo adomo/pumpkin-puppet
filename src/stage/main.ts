@@ -317,14 +317,8 @@ class StageApp {
           break;
         case 'AUDIO_METER':
           if (!this.mic.isArmed) {
-            const slots: PuppetSlot[] = ['left', 'center', 'right'];
-            slots.forEach((s) => {
-              if (s === this.focusedSlot) {
-                this.puppets[s].setMouthOpen(msg.smoothed);
-              } else {
-                this.puppets[s].setMouthOpen(0);
-              }
-            });
+            // Live mic is ALWAYS Classic Cartoon Jack (Center), regardless of Focus
+            this.puppets.center.setMouthOpen(msg.smoothed);
           }
           break;
         case 'SET_MONITOR':
@@ -604,13 +598,7 @@ class StageApp {
 
     if (this.mic.isArmed) {
       const level = this.mic.tick();
-      (Object.keys(this.puppets) as PuppetSlot[]).forEach((s) => {
-        if (s === this.focusedSlot) {
-          this.puppets[s].setMouthOpen(level);
-        } else {
-          this.puppets[s].setMouthOpen(0);
-        }
-      });
+      this.puppets.center.setMouthOpen(level);
     }
 
     let videoSources: Partial<Record<PuppetSlot, PuppetVideoSource>> | undefined = undefined;

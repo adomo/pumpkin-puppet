@@ -78,6 +78,7 @@ export class OneShotEngine {
   private activeLeft: ActiveTrack | null = null;
   private activeRight: ActiveTrack | null = null;
   public isSpookyBankEnabled: boolean = false;
+  private audioBufferCache: Map<string, AudioBuffer | null> = new Map();
 
   constructor(micEngine: MicEngine) {
     this.micEngine = micEngine;
@@ -87,7 +88,37 @@ export class OneShotEngine {
     this.isSpookyBankEnabled = enabled;
   }
 
-  public play(slot: 'left' | 'right', clipId: string): void {
+  private async fetchAudioClip(ctx: AudioContext, slot: 'left' | 'right', clipId: string): Promise<AudioBuffer | null> {
+    const key = `${slot}_${clipId}`;
+    if (this.audioBufferCache.has(key)) {
+      return this.audioBufferCache.get(key) || null;
+    }
+
+    const possibleUrls = [
+      `/sounds/${slot}_${clipId}.mp3`,
+      `/sounds/${slot}_${clipId}.wav`,
+      `/sounds/${clipId}.mp3`,
+      `/sounds/${clipId}.wav`
+    ];
+
+    for (const url of possibleUrls) {
+      try {
+        const resp = await fetch(url, { method: 'HEAD' });
+        if (resp.ok) {
+          const fileResp = await fetch(url);
+          const arrayBuf = await fileResp.arrayBuffer();
+          const audioBuf = await ctx.decodeAudioData(arrayBuf);
+          this.audioBufferCache.set(key, audioBuf);
+          return audioBuf;
+        }
+      } catch (_) {}
+    }
+
+    this.audioBufferCache.set(key, null);
+    return null;
+  }
+
+  public async play(slot: 'left' | 'right', clipId: string): Promise<void> {
     this.stop(slot);
 
     const isGoofy = slot === 'left';
@@ -107,12 +138,27 @@ export class OneShotEngine {
     if (!clip) return;
 
     const ctx = this.micEngine.getAudioContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume().catch(() => {});
+    }
     const auxGain = this.micEngine.getAuxInputNode();
 
-    // Trigger synthesis
-    const stopAudio = isGoofy
-      ? this.synthesizeGoofy(ctx, auxGain, clip.id)
-      : this.synthesizeSly(ctx, auxGain, clip.id, clip.category === 'spooky');
+    // Check if a pre-recorded audio file exists in /sounds/, otherwise fall back to procedural synthesis
+    let stopAudio: () => void = () => {};
+    const recordedBuffer = await this.fetchAudioClip(ctx, slot, clip.id);
+    if (recordedBuffer) {
+      const src = ctx.createBufferSource();
+      src.buffer = recordedBuffer;
+      src.connect(auxGain);
+      src.start();
+      stopAudio = () => {
+        try { src.stop(); src.disconnect(); } catch (_) {}
+      };
+    } else {
+      stopAudio = isGoofy
+        ? this.synthesizeGoofy(ctx, auxGain, clip.id)
+        : this.synthesizeSly(ctx, auxGain, clip.id, clip.category === 'spooky');
+    }
 
     // Animate mouth on Stage via syncBus
     const stopMouth = this.startMouthAnimation(slot, clip.duration, clip.text);

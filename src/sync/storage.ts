@@ -116,7 +116,7 @@ export const DEFAULT_VIDEO_CONFIG: VideoConfig = {
 };
 
 export const DEFAULT_CONFIG: AppConfig = {
-  gate: 0.012,
+  gate: 0.006,
   smoothness: 0.25,
   castDelayMs: 0,
   activeProfileId: 'default',

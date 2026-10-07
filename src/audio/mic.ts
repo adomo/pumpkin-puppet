@@ -16,10 +16,11 @@ export class MicEngine {
   public voiceConfig: VoiceConfig = { ...DEFAULT_VOICE_CONFIG };
 
   public isArmed: boolean = false;
-  public gate: number = 0.012; // Sensitive threshold for normal speech
+  public gate: number = 0.006; // Highly responsive threshold for normal conversational speech
   public smoothness: number = 0.25;
-  public gain: number = 4.5; // Multiplier to comfortably open jaw
-  public monitorEnabled: boolean = false; // Local laptop monitor (defaults to false to prevent feedback)
+  public gain: number = 5.0; // Multiplier to comfortably open jaw
+  public monitorEnabled: boolean = false; // Local laptop monitor for mic (defaults to false to prevent feedback)
+  private speechHoldFrames: number = 0; // Release hold (~90ms) across syllables
 
   // Direct Voice Transmission & Master Volume Controls
   public transmissionEnabled: boolean = true; // Voice to Stage/Speakers (enabled by default when armed)
@@ -31,7 +32,7 @@ export class MicEngine {
 
   private meterInterval: number | null = null;
 
-  constructor(initialGate: number = 0.012, initialSmoothness: number = 0.25) {
+  constructor(initialGate: number = 0.006, initialSmoothness: number = 0.25) {
     this.gate = initialGate;
     this.smoothness = initialSmoothness;
   }
@@ -60,6 +61,13 @@ export class MicEngine {
       this.auxInputNode = this.audioCtx.createGain();
       this.auxInputNode.gain.value = 1.0;
       this.auxInputNode.connect(this.masterGainNode);
+
+      // Local preview path for one-shots and sound triggers:
+      // Always audible on the operator's computer speakers without causing mic feedback
+      const auxLocalGain = this.audioCtx.createGain();
+      auxLocalGain.gain.value = 0.9;
+      this.auxInputNode.connect(auxLocalGain);
+      auxLocalGain.connect(this.audioCtx.destination);
     }
     return this.audioCtx;
   }
@@ -84,7 +92,7 @@ export class MicEngine {
       if (!this.stream) {
         this.stream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: true,
+            echoCancellation: false, // Prevent browser AEC from ducking mic signal when speakers/casting are active
             noiseSuppression: false,
             autoGainControl: true
           }
@@ -296,14 +304,23 @@ export class MicEngine {
     const rms = Math.sqrt(sum / this.timeData.length);
     this.rawRms = rms;
 
-    // Apply noise gate
+    // Apply sensitive noise gate with conversational scaling & syllable hold
     let target = 0;
     if (rms > this.gate) {
-      const normalized = (rms - this.gate) / Math.max(0.001, (0.08 - this.gate));
-      target = Math.min(1.0, normalized * this.gain);
+      // Conversational speech typically hits 0.012 - 0.040 RMS.
+      // Normalize against a friendly conversational ceiling (~0.042) instead of 0.08
+      const range = Math.max(0.001, 0.042 - this.gate);
+      const normalized = Math.min(1.0, (rms - this.gate) / range);
+      // Power curve 0.7 gives punchy low-volume jaw drops while smoothly reaching 1.0
+      target = Math.min(1.0, Math.pow(normalized, 0.7) * (this.gain * 0.35));
+      this.speechHoldFrames = 3; // Hold open for ~90ms across brief plosive pauses
+    } else if (this.speechHoldFrames > 0) {
+      this.speechHoldFrames--;
+      target = this.smoothedLevel * 0.82; // Natural syllabic decay during hold
     }
 
-    const alpha = target > this.smoothedLevel ? (1 - this.smoothness * 0.3) : (1 - this.smoothness);
+    // Responsive attack (0.75), organic release
+    const alpha = target > this.smoothedLevel ? 0.75 : (1 - this.smoothness);
     this.smoothedLevel = this.smoothedLevel + (target - this.smoothedLevel) * Math.max(0.05, alpha);
 
     if (this.smoothedLevel < 0.005) {

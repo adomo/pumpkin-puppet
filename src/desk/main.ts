@@ -223,6 +223,7 @@ class DeskApp {
     this.updateVideoUI();
     this.updateVoiceTransmitUI();
     this.refreshServerVideos();
+    this.syncStreamBridge().catch(() => {});
 
     syncBus.send({ type: 'SYNC_STATE_REQ' });
     this.updateControlsFromState();
@@ -1847,7 +1848,8 @@ class DeskApp {
   }
 
   private async syncStreamBridge(): Promise<void> {
-    const stream = (this.micEngine.isArmed && this.micEngine.transmissionEnabled)
+    this.micEngine.initContextAndMasterChain();
+    const stream = this.micEngine.transmissionEnabled
       ? this.micEngine.getOutputStream()
       : null;
     await this.streamBridge.setLocalStream(stream);
