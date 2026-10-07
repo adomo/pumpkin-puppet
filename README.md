@@ -8,7 +8,7 @@
 [![Web Audio API](https://img.shields.io/badge/Web%20Audio%20API-DSP%20Growl%20%26%20Subs-ff7518)](#-halloween-voice--subwoofer-dsp-rack)
 [![Canvas 2D](https://img.shields.io/badge/Canvas%202D-8x8%20Bilinear%20Warp-00e5ff)](#-perspective-keystone-projection-mapping)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?logo=buy-me-a-coffee)](https://buymeacoffee.com/daramcgann)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?logo=buy-me-a-coffee)](https://buymeacoffee.com/4x1EEwZW7J)
 
 ---
 
@@ -154,7 +154,7 @@ Pumpkin Puppet is a static frontend application with zero server dependencies. Y
 
 If this project made your Halloween display, party, or front porch trick-or-treat experience unforgettable, consider buying a coffee to support future spooky updates and features!
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/daramcgann)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/4x1EEwZW7J)
 
 ---
 
