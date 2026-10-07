@@ -11,6 +11,7 @@ export class MicEngine {
   private masterGainNode: GainNode | null = null;
   private localMonitorGainNode: GainNode | null = null;
   private streamDestinationNode: MediaStreamAudioDestinationNode | null = null;
+  private auxInputNode: GainNode | null = null;
   public voiceTransformer: VoiceTransformer | null = null;
   public voiceConfig: VoiceConfig = { ...DEFAULT_VOICE_CONFIG };
 
@@ -35,20 +36,50 @@ export class MicEngine {
     this.smoothness = initialSmoothness;
   }
 
+  public initContextAndMasterChain(): AudioContext {
+    if (!this.audioCtx) {
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      this.audioCtx = new AudioContextClass();
+    }
+    if (this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume().catch(() => {});
+    }
+
+    if (!this.masterGainNode) {
+      this.masterGainNode = this.audioCtx.createGain();
+      this.masterGainNode.gain.value = this.transmissionEnabled ? this.masterVolume : 0;
+
+      this.streamDestinationNode = this.audioCtx.createMediaStreamDestination();
+      this.masterGainNode.connect(this.streamDestinationNode);
+
+      this.localMonitorGainNode = this.audioCtx.createGain();
+      this.localMonitorGainNode.gain.value = this.monitorEnabled ? 1.0 : 0;
+      this.masterGainNode.connect(this.localMonitorGainNode);
+      this.localMonitorGainNode.connect(this.audioCtx.destination);
+
+      this.auxInputNode = this.audioCtx.createGain();
+      this.auxInputNode.gain.value = 1.0;
+      this.auxInputNode.connect(this.masterGainNode);
+    }
+    return this.audioCtx;
+  }
+
+  public getAudioContext(): AudioContext {
+    return this.initContextAndMasterChain();
+  }
+
+  public getAuxInputNode(): GainNode {
+    this.initContextAndMasterChain();
+    return this.auxInputNode!;
+  }
+
   public async arm(): Promise<boolean> {
     if (this.isArmed && this.audioCtx && this.audioCtx.state === 'running') {
       return true;
     }
 
     try {
-      if (!this.audioCtx) {
-        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        this.audioCtx = new AudioContextClass();
-      }
-
-      if (this.audioCtx.state === 'suspended') {
-        await this.audioCtx.resume();
-      }
+      this.initContextAndMasterChain();
 
       if (!this.stream) {
         this.stream = await navigator.mediaDevices.getUserMedia({
@@ -59,41 +90,27 @@ export class MicEngine {
           }
         });
 
-        const source = this.audioCtx.createMediaStreamSource(this.stream);
-        this.analyser = this.audioCtx.createAnalyser();
+        const source = this.audioCtx!.createMediaStreamSource(this.stream);
+        this.analyser = this.audioCtx!.createAnalyser();
         this.analyser.fftSize = 512;
         this.analyser.smoothingTimeConstant = 0.15;
         this.timeData = new Float32Array(new ArrayBuffer(this.analyser.fftSize * 4));
 
         source.connect(this.analyser);
 
-        // Master Output Stage (Clean or DSP voice)
-        this.masterGainNode = this.audioCtx.createGain();
-        this.masterGainNode.gain.value = this.transmissionEnabled ? this.masterVolume : 0;
-
-        // Route A: MediaStream Destination for WebRTC Stage/Cast Audio Bridge
-        this.streamDestinationNode = this.audioCtx.createMediaStreamDestination();
-        this.masterGainNode.connect(this.streamDestinationNode);
-
-        // Route B: Local Laptop Monitor (Optional Mac laptop speakers)
-        this.localMonitorGainNode = this.audioCtx.createGain();
-        this.localMonitorGainNode.gain.value = this.monitorEnabled ? 1.0 : 0;
-        this.masterGainNode.connect(this.localMonitorGainNode);
-        this.localMonitorGainNode.connect(this.audioCtx.destination);
-
         // Path A: Direct Clean Mic Passthrough (Zero DSP, Zero Distortion, No Change)
-        this.cleanGainNode = this.audioCtx.createGain();
+        this.cleanGainNode = this.audioCtx!.createGain();
         this.cleanGainNode.gain.value = this.isCleanPassthrough ? 1.0 : 0.0;
         source.connect(this.cleanGainNode);
-        this.cleanGainNode.connect(this.masterGainNode);
+        this.cleanGainNode.connect(this.masterGainNode!);
 
         // Path B: Halloween Voice Transformer DSP
-        this.voiceTransformer = new VoiceTransformer(this.audioCtx, this.voiceConfig);
-        this.dspGainNode = this.audioCtx.createGain();
+        this.voiceTransformer = new VoiceTransformer(this.audioCtx!, this.voiceConfig);
+        this.dspGainNode = this.audioCtx!.createGain();
         this.dspGainNode.gain.value = this.isCleanPassthrough ? 0.0 : 1.0;
         source.connect(this.voiceTransformer.inputNode);
         this.voiceTransformer.outputNode.connect(this.dspGainNode);
-        this.dspGainNode.connect(this.masterGainNode);
+        this.dspGainNode.connect(this.masterGainNode!);
 
         this.updateRouting();
       }
@@ -180,20 +197,31 @@ export class MicEngine {
       this.stream.getTracks().forEach((track) => track.stop());
       this.stream = null;
     }
-    if (this.audioCtx && this.audioCtx.state !== 'closed') {
-      this.audioCtx.close().catch(() => {});
-      this.audioCtx = null;
+    if (this.cleanGainNode) {
+      try { this.cleanGainNode.disconnect(); } catch (_) {}
+      this.cleanGainNode = null;
+    }
+    if (this.dspGainNode) {
+      try { this.dspGainNode.disconnect(); } catch (_) {}
+      this.dspGainNode = null;
     }
     this.voiceTransformer = null;
-    this.cleanGainNode = null;
-    this.dspGainNode = null;
-    this.masterGainNode = null;
-    this.localMonitorGainNode = null;
-    this.streamDestinationNode = null;
     if (this.meterInterval) {
       clearInterval(this.meterInterval);
       this.meterInterval = null;
     }
+  }
+
+  public destroy(): void {
+    this.disarm();
+    if (this.audioCtx && this.audioCtx.state !== 'closed') {
+      this.audioCtx.close().catch(() => {});
+      this.audioCtx = null;
+    }
+    this.masterGainNode = null;
+    this.localMonitorGainNode = null;
+    this.streamDestinationNode = null;
+    this.auxInputNode = null;
   }
 
   public setVoicePitch(semitones: number): void {

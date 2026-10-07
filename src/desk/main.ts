@@ -15,6 +15,7 @@ import {
 import { MicEngine } from '../audio/mic';
 import { showConductor } from '../show/conductor';
 import { AudioStreamBridge, BridgeConnectionState } from '../audio/stream-bridge';
+import { OneShotEngine } from '../audio/one-shots';
 
 class DeskApp {
   private showMode: ShowMode = 'procedural';
@@ -31,6 +32,20 @@ class DeskApp {
   private mappingModeActive: boolean = false;
   private micEngine: MicEngine;
   private streamBridge: AudioStreamBridge;
+  private oneShotEngine: OneShotEngine;
+  private isSetupOpen: boolean = false;
+  private isSpookyBankOn: boolean = false;
+  private customDspPresets: Record<string, { name: string; pitch: number; sub: number; gourd: number; drive: number; reverb: number }> = {};
+
+  // Setup Drawer DOM Elements
+  private btnToggleSetup!: HTMLButtonElement;
+  private btnCloseSetup!: HTMLButtonElement;
+  private setupDrawer!: HTMLElement;
+  private lockIndicator!: HTMLElement;
+  private btnFocusBoth!: HTMLButtonElement;
+  private btnToggleSpookyBank!: HTMLButtonElement;
+  private slySpookyBankGroup!: HTMLElement;
+  private btnSaveDspPreset!: HTMLButtonElement;
 
   // Mode Switcher DOM
   private tabModeProcedural!: HTMLButtonElement;
@@ -190,11 +205,14 @@ class DeskApp {
     this.profiles = config.profiles;
     this.activeProfileId = config.activeProfileId;
     this.micEngine = new MicEngine(this.currentGate, this.currentSmoothness);
+    this.oneShotEngine = new OneShotEngine(this.micEngine);
     this.streamBridge = new AudioStreamBridge('desk');
     this.streamBridge.onStateChange((st) => this.updateCastAudioStatus(st));
 
     this.bindDomElements();
+    this.loadCustomDspPresets();
     this.initEventListeners();
+    this.initOneShotControls();
     this.initVideoShowControls();
     this.initKeystonePad();
     this.populateProfiles();
@@ -211,6 +229,16 @@ class DeskApp {
   }
 
   private bindDomElements(): void {
+    // Setup Drawer & Focus Both DOM
+    this.btnToggleSetup = document.getElementById('btn-toggle-setup') as HTMLButtonElement;
+    this.btnCloseSetup = document.getElementById('btn-close-setup') as HTMLButtonElement;
+    this.setupDrawer = document.getElementById('setup-drawer')!;
+    this.lockIndicator = document.getElementById('lock-indicator')!;
+    this.btnFocusBoth = document.getElementById('btn-focus-both') as HTMLButtonElement;
+    this.btnToggleSpookyBank = document.getElementById('btn-toggle-spooky-bank') as HTMLButtonElement;
+    this.slySpookyBankGroup = document.getElementById('sly-spooky-bank-group')!;
+    this.btnSaveDspPreset = document.getElementById('btn-save-dsp-preset') as HTMLButtonElement;
+
     // Mode Switcher DOM
     this.tabModeProcedural = document.getElementById('tab-mode-procedural') as HTMLButtonElement;
     this.tabModeVideo = document.getElementById('tab-mode-video') as HTMLButtonElement;
@@ -462,23 +490,76 @@ class DeskApp {
 
     this.selectVoicePreset.addEventListener('change', () => {
       const key = this.selectVoicePreset.value;
-      this.micEngine.applyVoicePreset(key);
-      const cfg = this.micEngine.voiceConfig;
-      this.sliderVoicePitch.value = cfg.pitchSemitones.toString();
-      this.valVoicePitchEl.textContent = `${cfg.pitchSemitones > 0 ? '+' : ''}${cfg.pitchSemitones} st (${cfg.pitchSemitones < 0 ? 'Deeper' : cfg.pitchSemitones > 0 ? 'Higher' : 'Normal'})`;
+      if (this.customDspPresets[key]) {
+        const p = this.customDspPresets[key];
+        this.micEngine.setVoicePitch(p.pitch);
+        this.micEngine.setVoiceSubBass(p.sub);
+        this.micEngine.setVoiceGourdResonance(p.gourd);
+        this.micEngine.setVoiceDrive(p.drive / 100);
+        this.micEngine.setVoiceReverb(p.reverb / 100);
 
-      this.sliderVoiceSub.value = cfg.subBassDb.toString();
-      this.valVoiceSubEl.textContent = `+${cfg.subBassDb} dB (${cfg.subBassDb > 10 ? 'Heavy Subs' : cfg.subBassDb > 0 ? 'Warm Bass' : 'Off'})`;
+        this.sliderVoicePitch.value = p.pitch.toString();
+        this.valVoicePitchEl.textContent = `${p.pitch > 0 ? '+' : ''}${p.pitch} st (${p.pitch < 0 ? 'Deeper' : p.pitch > 0 ? 'Higher' : 'Normal'})`;
+        this.sliderVoiceSub.value = p.sub.toString();
+        this.valVoiceSubEl.textContent = `+${p.sub} dB`;
+        this.sliderVoiceGourd.value = p.gourd.toString();
+        this.valVoiceGourdEl.textContent = `+${p.gourd} dB`;
+        this.sliderVoiceDrive.value = p.drive.toString();
+        this.valVoiceDriveEl.textContent = `${p.drive}%`;
+        this.sliderVoiceReverb.value = p.reverb.toString();
+        this.valVoiceReverbEl.textContent = `${p.reverb}%`;
+      } else {
+        this.micEngine.applyVoicePreset(key);
+        const cfg = this.micEngine.voiceConfig;
+        this.sliderVoicePitch.value = cfg.pitchSemitones.toString();
+        this.valVoicePitchEl.textContent = `${cfg.pitchSemitones > 0 ? '+' : ''}${cfg.pitchSemitones} st (${cfg.pitchSemitones < 0 ? 'Deeper' : cfg.pitchSemitones > 0 ? 'Higher' : 'Normal'})`;
 
-      this.sliderVoiceGourd.value = cfg.gourdResonanceDb.toString();
-      this.valVoiceGourdEl.textContent = `+${cfg.gourdResonanceDb} dB`;
+        this.sliderVoiceSub.value = cfg.subBassDb.toString();
+        this.valVoiceSubEl.textContent = `+${cfg.subBassDb} dB (${cfg.subBassDb > 10 ? 'Heavy Subs' : cfg.subBassDb > 0 ? 'Warm Bass' : 'Off'})`;
 
-      this.sliderVoiceDrive.value = Math.round(cfg.driveAmount * 100).toString();
-      this.valVoiceDriveEl.textContent = `${Math.round(cfg.driveAmount * 100)}%`;
+        this.sliderVoiceGourd.value = cfg.gourdResonanceDb.toString();
+        this.valVoiceGourdEl.textContent = `+${cfg.gourdResonanceDb} dB`;
 
-      this.sliderVoiceReverb.value = Math.round(cfg.reverbAmount * 100).toString();
-      this.valVoiceReverbEl.textContent = `${Math.round(cfg.reverbAmount * 100)}%`;
+        this.sliderVoiceDrive.value = Math.round(cfg.driveAmount * 100).toString();
+        this.valVoiceDriveEl.textContent = `${Math.round(cfg.driveAmount * 100)}%`;
+
+        this.sliderVoiceReverb.value = Math.round(cfg.reverbAmount * 100).toString();
+        this.valVoiceReverbEl.textContent = `${Math.round(cfg.reverbAmount * 100)}%`;
+      }
     });
+
+    // Save current DSP sliders as custom preset
+    this.btnSaveDspPreset?.addEventListener('click', () => {
+      const name = prompt('Enter a name for this custom Halloween voice preset:', 'My Custom Jack');
+      if (name && name.trim()) {
+        const presetKey = 'custom_' + Date.now();
+        const p = {
+          name: name.trim(),
+          pitch: parseInt(this.sliderVoicePitch.value, 10),
+          sub: parseFloat(this.sliderVoiceSub.value),
+          gourd: parseFloat(this.sliderVoiceGourd.value),
+          drive: parseInt(this.sliderVoiceDrive.value, 10),
+          reverb: parseInt(this.sliderVoiceReverb.value, 10)
+        };
+        this.customDspPresets[presetKey] = p;
+        try {
+          localStorage.setItem('pumpkin_custom_dsp_presets', JSON.stringify(this.customDspPresets));
+        } catch (e) {
+          console.error(e);
+        }
+
+        const opt = document.createElement('option');
+        opt.value = presetKey;
+        opt.textContent = `🎃 ${p.name} (Custom)`;
+        this.selectVoicePreset.appendChild(opt);
+        this.selectVoicePreset.value = presetKey;
+        alert(`Preset "${p.name}" saved! It is now selectable in the Show surface.`);
+      }
+    });
+
+    // Setup Drawer Toggle Listeners
+    this.btnToggleSetup?.addEventListener('click', () => this.toggleSetupDrawer());
+    this.btnCloseSetup?.addEventListener('click', () => this.toggleSetupDrawer(false));
 
     // Gate
     this.sliderGate.addEventListener('input', () => {
@@ -511,6 +592,7 @@ class DeskApp {
     this.btnFocusLeft.addEventListener('click', () => this.setFocus('left'));
     this.btnFocusCenter.addEventListener('click', () => this.setFocus('center'));
     this.btnFocusRight.addEventListener('click', () => this.setFocus('right'));
+    this.btnFocusBoth?.addEventListener('click', () => this.setFocusBoth());
 
     // Toggle Mapping Mode
     this.btnToggleMapping.addEventListener('click', () => {
@@ -1369,9 +1451,97 @@ class DeskApp {
     this.btnFocusLeft.classList.toggle('active', slot === 'left');
     this.btnFocusCenter.classList.toggle('active', slot === 'center');
     this.btnFocusRight.classList.toggle('active', slot === 'right');
+    this.btnFocusBoth?.classList.remove('active');
 
     syncBus.send({ type: 'SET_FOCUS', slot });
     this.updateControlsFromState();
+  }
+
+  private setFocusBoth(): void {
+    this.btnFocusLeft.classList.add('active');
+    this.btnFocusRight.classList.add('active');
+    this.btnFocusCenter.classList.remove('active');
+    this.btnFocusBoth?.classList.add('active');
+    this.focusNameEl.textContent = 'Both Sides (L+R)';
+  }
+
+  private toggleSetupDrawer(open?: boolean): void {
+    this.isSetupOpen = open !== undefined ? open : !this.isSetupOpen;
+    if (this.setupDrawer) {
+      this.setupDrawer.style.display = this.isSetupOpen ? 'block' : 'none';
+    }
+    if (this.btnToggleSetup) {
+      this.btnToggleSetup.classList.toggle('active', this.isSetupOpen);
+      this.btnToggleSetup.innerHTML = this.isSetupOpen ? '✕ Close Setup' : '⚙️ Setup &amp; Mapping';
+    }
+    if (this.lockIndicator) {
+      this.lockIndicator.textContent = this.isSetupOpen ? '🔓 Mapping Unlocked' : '🔒 Mapping Locked';
+      this.lockIndicator.className = this.isSetupOpen ? 'lock-pill unlocked' : 'lock-pill locked';
+    }
+    if (!this.isSetupOpen) {
+      this.activeCorner = 'none';
+      this.drawKeystonePad();
+    }
+  }
+
+  private loadCustomDspPresets(): void {
+    try {
+      const saved = localStorage.getItem('pumpkin_custom_dsp_presets');
+      if (saved) {
+        this.customDspPresets = JSON.parse(saved);
+        for (const [key, p] of Object.entries(this.customDspPresets)) {
+          const opt = document.createElement('option');
+          opt.value = key;
+          opt.textContent = `🎃 ${p.name} (Custom)`;
+          this.selectVoicePreset?.appendChild(opt);
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load custom DSP presets:', e);
+    }
+  }
+
+  private initOneShotControls(): void {
+    // Single slot one-shots
+    document.querySelectorAll('[data-oneshot-slot]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        const btn = e.currentTarget as HTMLElement;
+        const slot = btn.getAttribute('data-oneshot-slot') as 'left' | 'right';
+        const clipId = btn.getAttribute('data-oneshot-clip');
+        if (slot && clipId) {
+          this.oneShotEngine.play(slot, clipId);
+        }
+      });
+    });
+
+    // Both sides one-shots
+    document.querySelectorAll('[data-oneshot-both]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        const btn = e.currentTarget as HTMLElement;
+        const clipId = btn.getAttribute('data-oneshot-both');
+        if (clipId) {
+          this.oneShotEngine.playBoth(clipId);
+        }
+      });
+    });
+
+    // Sly Spooky Bank Toggle
+    this.btnToggleSpookyBank?.addEventListener('click', () => {
+      this.isSpookyBankOn = !this.isSpookyBankOn;
+      this.oneShotEngine.setSpookyBank(this.isSpookyBankOn);
+      if (this.slySpookyBankGroup) {
+        this.slySpookyBankGroup.style.display = this.isSpookyBankOn ? 'block' : 'none';
+      }
+      if (this.btnToggleSpookyBank) {
+        if (this.isSpookyBankOn) {
+          this.btnToggleSpookyBank.textContent = '⚠️ Sly Spooky Bank: ACTIVE (Spooky Clips Enabled)';
+          this.btnToggleSpookyBank.classList.add('spooky-active');
+        } else {
+          this.btnToggleSpookyBank.textContent = '⚠️ Sly Spooky Bank: OFF (Safe)';
+          this.btnToggleSpookyBank.classList.remove('spooky-active');
+        }
+      }
+    });
   }
 
   private broadcastTransform(): void {
@@ -1645,6 +1815,7 @@ class DeskApp {
 
       // Tab: cycle keystone edit corner (none -> tl -> tr -> bl -> br -> none)
       if (e.key === 'Tab') {
+        if (!this.isSetupOpen) return;
         e.preventDefault();
         const cycle: Array<'none' | CornerKey> = ['none', 'tl', 'tr', 'bl', 'br'];
         const curIdx = cycle.indexOf(this.activeCorner);
@@ -1653,30 +1824,32 @@ class DeskApp {
         return;
       }
 
-      // Direct Corner Selection: 7=TL, 8=TR, 9=BL, 0=BR
-      if (e.key === '7') {
-        e.preventDefault();
-        this.activeCorner = this.activeCorner === 'tl' ? 'none' : 'tl';
-        this.drawKeystonePad();
-        return;
-      }
-      if (e.key === '8') {
-        e.preventDefault();
-        this.activeCorner = this.activeCorner === 'tr' ? 'none' : 'tr';
-        this.drawKeystonePad();
-        return;
-      }
-      if (e.key === '9') {
-        e.preventDefault();
-        this.activeCorner = this.activeCorner === 'bl' ? 'none' : 'bl';
-        this.drawKeystonePad();
-        return;
-      }
-      if (e.key === '0') {
-        e.preventDefault();
-        this.activeCorner = this.activeCorner === 'br' ? 'none' : 'br';
-        this.drawKeystonePad();
-        return;
+      // Direct Corner Selection: 7=TL, 8=TR, 9=BL, 0=BR (Only when Setup is open)
+      if (this.isSetupOpen) {
+        if (e.key === '7') {
+          e.preventDefault();
+          this.activeCorner = this.activeCorner === 'tl' ? 'none' : 'tl';
+          this.drawKeystonePad();
+          return;
+        }
+        if (e.key === '8') {
+          e.preventDefault();
+          this.activeCorner = this.activeCorner === 'tr' ? 'none' : 'tr';
+          this.drawKeystonePad();
+          return;
+        }
+        if (e.key === '9') {
+          e.preventDefault();
+          this.activeCorner = this.activeCorner === 'bl' ? 'none' : 'bl';
+          this.drawKeystonePad();
+          return;
+        }
+        if (e.key === '0') {
+          e.preventDefault();
+          this.activeCorner = this.activeCorner === 'br' ? 'none' : 'br';
+          this.drawKeystonePad();
+          return;
+        }
       }
 
       // 1, 2, 3: Focus Left, Center, Right
@@ -1697,136 +1870,157 @@ class DeskApp {
       }
 
       // Arrow keys:
-      // If a corner is active, nudge that corner!
-      if (this.activeCorner !== 'none') {
-        const step = e.shiftKey ? 8 : 2;
-        const corner = this.activeCorner;
+      // If Setup is CLOSED during a show: Arrow keys trigger glanceable look directions!
+      if (!this.isSetupOpen) {
         if (e.key === 'ArrowLeft') {
           e.preventDefault();
-          this.currentTransforms[this.currentFocus].corners[corner][0] -= step;
-          this.broadcastTransform();
-          this.updateCornerInputs();
-          this.drawKeystonePad();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'look-left' });
           return;
         }
         if (e.key === 'ArrowRight') {
           e.preventDefault();
-          this.currentTransforms[this.currentFocus].corners[corner][0] += step;
-          this.broadcastTransform();
-          this.updateCornerInputs();
-          this.drawKeystonePad();
-          return;
-        }
-        if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          this.currentTransforms[this.currentFocus].corners[corner][1] -= step;
-          this.broadcastTransform();
-          this.updateCornerInputs();
-          this.drawKeystonePad();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'look-right' });
           return;
         }
         if (e.key === 'ArrowDown') {
           e.preventDefault();
-          this.currentTransforms[this.currentFocus].corners[corner][1] += step;
-          this.broadcastTransform();
-          this.updateCornerInputs();
-          this.drawKeystonePad();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'look-center' });
           return;
         }
       }
 
-      // If no corner is active, nudge the entire pumpkin position
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        const step = e.shiftKey ? 16 : 4;
-        this.currentTransforms[this.currentFocus].x -= step;
-        this.sliderPosX.value = this.currentTransforms[this.currentFocus].x.toString();
-        this.valPosXEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].x)}px`;
-        this.broadcastTransform();
-        return;
-      }
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        const step = e.shiftKey ? 16 : 4;
-        this.currentTransforms[this.currentFocus].x += step;
-        this.sliderPosX.value = this.currentTransforms[this.currentFocus].x.toString();
-        this.valPosXEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].x)}px`;
-        this.broadcastTransform();
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        const step = e.shiftKey ? 16 : 4;
-        this.currentTransforms[this.currentFocus].y -= step;
-        this.sliderPosY.value = this.currentTransforms[this.currentFocus].y.toString();
-        this.valPosYEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].y)}px`;
-        this.broadcastTransform();
-        return;
-      }
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        const step = e.shiftKey ? 16 : 4;
-        this.currentTransforms[this.currentFocus].y += step;
-        this.sliderPosY.value = this.currentTransforms[this.currentFocus].y.toString();
-        this.valPosYEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].y)}px`;
-        this.broadcastTransform();
-        return;
-      }
+      // If Setup is OPEN: Arrow keys nudge keystone corner or puppet mapping position!
+      if (this.isSetupOpen) {
+        if (this.activeCorner !== 'none') {
+          const step = e.shiftKey ? 8 : 2;
+          const corner = this.activeCorner;
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            this.currentTransforms[this.currentFocus].corners[corner][0] -= step;
+            this.broadcastTransform();
+            this.updateCornerInputs();
+            this.drawKeystonePad();
+            return;
+          }
+          if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            this.currentTransforms[this.currentFocus].corners[corner][0] += step;
+            this.broadcastTransform();
+            this.updateCornerInputs();
+            this.drawKeystonePad();
+            return;
+          }
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            this.currentTransforms[this.currentFocus].corners[corner][1] -= step;
+            this.broadcastTransform();
+            this.updateCornerInputs();
+            this.drawKeystonePad();
+            return;
+          }
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            this.currentTransforms[this.currentFocus].corners[corner][1] += step;
+            this.broadcastTransform();
+            this.updateCornerInputs();
+            this.drawKeystonePad();
+            return;
+          }
+        }
 
-      // Scale: Alt + [ or ]
-      if (e.altKey) {
-        if (e.key === '[' || e.code === 'BracketLeft') {
+        // If no corner is active, nudge the entire pumpkin position
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const step = e.shiftKey ? 16 : 4;
+          this.currentTransforms[this.currentFocus].x -= step;
+          this.sliderPosX.value = this.currentTransforms[this.currentFocus].x.toString();
+          this.valPosXEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].x)}px`;
+          this.broadcastTransform();
+          return;
+        }
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          const step = e.shiftKey ? 16 : 4;
+          this.currentTransforms[this.currentFocus].x += step;
+          this.sliderPosX.value = this.currentTransforms[this.currentFocus].x.toString();
+          this.valPosXEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].x)}px`;
+          this.broadcastTransform();
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const step = e.shiftKey ? 16 : 4;
+          this.currentTransforms[this.currentFocus].y -= step;
+          this.sliderPosY.value = this.currentTransforms[this.currentFocus].y.toString();
+          this.valPosYEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].y)}px`;
+          this.broadcastTransform();
+          return;
+        }
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const step = e.shiftKey ? 16 : 4;
+          this.currentTransforms[this.currentFocus].y += step;
+          this.sliderPosY.value = this.currentTransforms[this.currentFocus].y.toString();
+          this.valPosYEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].y)}px`;
+          this.broadcastTransform();
+          return;
+        }
+
+        // Scale: Alt + [ or ]
+        if (e.altKey) {
+          if (e.key === '[' || e.code === 'BracketLeft') {
+            e.preventDefault();
+            const tf = this.currentTransforms[this.currentFocus];
+            if (e.shiftKey) {
+              tf.scaleY = Math.max(0.2, +(tf.scaleY - 0.05).toFixed(2));
+            } else {
+              tf.scaleX = Math.max(0.2, +(tf.scaleX - 0.05).toFixed(2));
+              tf.scaleY = Math.max(0.2, +(tf.scaleY - 0.05).toFixed(2));
+            }
+            this.sliderScaleX.value = tf.scaleX.toString();
+            this.sliderScaleY.value = tf.scaleY.toString();
+            this.valScaleXEl.textContent = tf.scaleX.toFixed(2);
+            this.valScaleYEl.textContent = tf.scaleY.toFixed(2);
+            this.broadcastTransform();
+            return;
+          }
+          if (e.key === ']' || e.code === 'BracketRight') {
+            e.preventDefault();
+            const tf = this.currentTransforms[this.currentFocus];
+            if (e.shiftKey) {
+              tf.scaleY = Math.min(3.0, +(tf.scaleY + 0.05).toFixed(2));
+            } else {
+              tf.scaleX = Math.min(3.0, +(tf.scaleX + 0.05).toFixed(2));
+              tf.scaleY = Math.min(3.0, +(tf.scaleY + 0.05).toFixed(2));
+            }
+            this.sliderScaleX.value = tf.scaleX.toString();
+            this.sliderScaleY.value = tf.scaleY.toString();
+            this.valScaleXEl.textContent = tf.scaleX.toFixed(2);
+            this.valScaleYEl.textContent = tf.scaleY.toFixed(2);
+            this.broadcastTransform();
+            return;
+          }
+        }
+
+        // Rotation: , and .
+        if (e.key === ',' || e.key === '<') {
           e.preventDefault();
           const tf = this.currentTransforms[this.currentFocus];
-          if (e.shiftKey) {
-            tf.scaleY = Math.max(0.2, +(tf.scaleY - 0.05).toFixed(2));
-          } else {
-            tf.scaleX = Math.max(0.2, +(tf.scaleX - 0.05).toFixed(2));
-            tf.scaleY = Math.max(0.2, +(tf.scaleY - 0.05).toFixed(2));
-          }
-          this.sliderScaleX.value = tf.scaleX.toString();
-          this.sliderScaleY.value = tf.scaleY.toString();
-          this.valScaleXEl.textContent = tf.scaleX.toFixed(2);
-          this.valScaleYEl.textContent = tf.scaleY.toFixed(2);
+          tf.rotation = (tf.rotation - 2) % 360;
+          this.sliderRot.value = tf.rotation.toString();
+          this.valRotEl.textContent = `${Math.round(tf.rotation)}°`;
           this.broadcastTransform();
           return;
         }
-        if (e.key === ']' || e.code === 'BracketRight') {
+        if (e.key === '.' || e.key === '>') {
           e.preventDefault();
           const tf = this.currentTransforms[this.currentFocus];
-          if (e.shiftKey) {
-            tf.scaleY = Math.min(3.0, +(tf.scaleY + 0.05).toFixed(2));
-          } else {
-            tf.scaleX = Math.min(3.0, +(tf.scaleX + 0.05).toFixed(2));
-            tf.scaleY = Math.min(3.0, +(tf.scaleY + 0.05).toFixed(2));
-          }
-          this.sliderScaleX.value = tf.scaleX.toString();
-          this.sliderScaleY.value = tf.scaleY.toString();
-          this.valScaleXEl.textContent = tf.scaleX.toFixed(2);
-          this.valScaleYEl.textContent = tf.scaleY.toFixed(2);
+          tf.rotation = (tf.rotation + 2) % 360;
+          this.sliderRot.value = tf.rotation.toString();
+          this.valRotEl.textContent = `${Math.round(tf.rotation)}°`;
           this.broadcastTransform();
           return;
         }
-      }
-
-      // Rotation: , and .
-      if (e.key === ',' || e.key === '<') {
-        e.preventDefault();
-        const tf = this.currentTransforms[this.currentFocus];
-        tf.rotation = (tf.rotation - 2) % 360;
-        this.sliderRot.value = tf.rotation.toString();
-        this.valRotEl.textContent = `${Math.round(tf.rotation)}°`;
-        this.broadcastTransform();
-        return;
-      }
-      if (e.key === '.' || e.key === '>') {
-        e.preventDefault();
-        const tf = this.currentTransforms[this.currentFocus];
-        tf.rotation = (tf.rotation + 2) % 360;
-        this.sliderRot.value = tf.rotation.toString();
-        this.valRotEl.textContent = `${Math.round(tf.rotation)}°`;
-        this.broadcastTransform();
-        return;
       }
 
       // Gate: [ and ] (without Alt)
@@ -1893,6 +2087,7 @@ class DeskApp {
           syncBus.send({ type: 'TOGGLE_MAPPING_MODE', active: this.mappingModeActive });
           break;
         case 'X':
+          if (!this.isSetupOpen) break;
           e.preventDefault();
           this.currentTransforms[this.currentFocus].corners = JSON.parse(JSON.stringify(DEFAULT_CORNERS));
           this.sliderKeystoneV.value = '0';
@@ -1901,6 +2096,7 @@ class DeskApp {
           this.updateControlsFromState();
           break;
         case 'R':
+          if (!this.isSetupOpen) break;
           e.preventDefault();
           this.currentTransforms[this.currentFocus] = JSON.parse(JSON.stringify(DEFAULT_TRANSFORMS[this.currentFocus]));
           syncBus.send({ type: 'RESET_TRANSFORM', slot: this.currentFocus });

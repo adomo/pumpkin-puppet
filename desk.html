@@ -10,383 +10,746 @@
 </head>
 <body>
   <div class="desk-container">
+    <!-- Header: Title, Status Pills, Focus & Both Controls, Setup Drawer Toggle -->
     <header class="desk-header">
       <div class="header-title">
         <h1>🎃 Pumpkin Puppet Operator Desk</h1>
-        <span class="status-badge" id="sync-status">Connected to Stage</span>
+        <div class="status-badge-group">
+          <span class="status-badge" id="sync-status">Connected to Stage</span>
+          <span class="status-badge" id="badge-cast-audio">Cast Audio: Standby</span>
+          <span class="status-badge" id="badge-voice-transmit">Muted</span>
+        </div>
       </div>
       <div class="header-right">
-        <div class="profile-select-bar">
-          <label for="select-profile">Profile:</label>
-          <select id="select-profile" class="select-input"></select>
-          <button id="btn-save-profile" class="btn small" title="Save current mapping as new profile">+ Save</button>
-          <button id="btn-export-profile" class="btn small" title="Export profiles to JSON">Export</button>
-          <label class="btn small file-btn" title="Import profiles from JSON">
-            Import
-            <input type="file" id="file-profile-import" accept=".json" hidden>
-          </label>
+        <!-- Live Puppet Focus Selection -->
+        <div class="focus-bar">
+          <span class="focus-label">Focus:</span>
+          <div class="btn-group focus-btn-group">
+            <button id="btn-focus-left" class="btn focus-btn" data-key="1" title="Focus Goofy Bucktooth (Key: 1)">1: 🤪 Goofy (Left)</button>
+            <button id="btn-focus-center" class="btn focus-btn active" data-key="2" title="Focus Classic Jack (Key: 2)">2: 🎃 Jack (Center)</button>
+            <button id="btn-focus-right" class="btn focus-btn" data-key="3" title="Focus Sly &amp; Mischievous (Key: 3)">3: 😈 Sly (Right)</button>
+            <button id="btn-focus-both" class="btn focus-btn both-focus-btn" title="Fires Goofy and Sly together">🎭 Both Sides</button>
+          </div>
         </div>
-        <span class="focus-indicator">Focus: <strong id="focus-name">Center</strong></span>
+        <!-- Setup Drawer Button & Lock Indicator -->
+        <div class="setup-toggle-wrap">
+          <button id="btn-toggle-setup" class="btn highlight-btn" title="Toggle Setup &amp; Mapping Drawer">
+            ⚙️ Setup &amp; Mapping
+          </button>
+          <span id="lock-indicator" class="lock-pill locked">🔒 Mapping Locked</span>
+        </div>
       </div>
     </header>
 
-    <!-- Show Type Mode Switcher Bar -->
-    <div class="mode-switcher-bar">
-      <div class="mode-tabs">
-        <button id="tab-mode-procedural" class="mode-tab-btn active">
-          🎭 Interactive Puppets Show
-        </button>
-        <button id="tab-mode-video" class="mode-tab-btn">
-          🎬 Video Projection Show
-        </button>
+    <!-- LAYER 2: SETUP & CALIBRATION DRAWER (COLLAPSED DURING SHOW) -->
+    <div id="setup-drawer" class="setup-drawer" style="display: none;">
+      <div class="setup-drawer-banner">
+        <div class="setup-banner-left">
+          <h2>⚙️ System Setup, Calibration &amp; Diagnostics</h2>
+          <span class="status-badge warning">🔓 Mapping Unlocked for Nudging</span>
+        </div>
+        <button id="btn-close-setup" class="btn warning">🔒 Close Setup &amp; Lock Mapping</button>
       </div>
-      <div class="mode-status-info">
-        <span id="mode-desc-text">Mode: Interactive Puppets (Mic, Synth Voice DSP, Banter Conductor)</span>
+
+      <!-- Profiles Bar -->
+      <div class="profile-select-bar">
+        <label for="select-profile">Mapping Profile:</label>
+        <select id="select-profile" class="select-input"></select>
+        <button id="btn-save-profile" class="btn small" title="Save current mapping as new profile">+ Save</button>
+        <button id="btn-export-profile" class="btn small" title="Export profiles to JSON">Export</button>
+        <label class="btn small file-btn" title="Import profiles from JSON">
+          Import
+          <input type="file" id="file-profile-import" accept=".json" hidden>
+        </label>
+      </div>
+
+      <!-- Show Type Mode Switcher Bar -->
+      <div class="mode-switcher-bar">
+        <div class="mode-tabs">
+          <button id="tab-mode-procedural" class="mode-tab-btn active">
+            🎭 Interactive Puppets Show
+          </button>
+          <button id="tab-mode-video" class="mode-tab-btn">
+            🎬 Video Projection Show
+          </button>
+        </div>
+        <div class="mode-status-info">
+          <span id="mode-desc-text">Mode: Interactive Puppets (Mic, Synth Voice DSP, Banter Conductor)</span>
+        </div>
+      </div>
+
+      <div class="setup-grid">
+        <!-- Setup Column 1: Mapping & Keystone -->
+        <section class="desk-card puppet-section">
+          <div class="section-header-row">
+            <h3>Pumpkin Keystone &amp; Projection Quad</h3>
+            <button id="btn-toggle-mapping" class="btn highlight-btn small" title="Key: M">Mapping Wireframe (M)</button>
+          </div>
+
+          <div class="style-select-row">
+            <label for="select-face-style">Face Style:</label>
+            <select id="select-face-style" class="select-input">
+              <option value="classic">🎃 Classic Cartoon Jack (Singing Leader)</option>
+              <option value="goofy">🤪 Goofy Bucktooth (Comic Relief)</option>
+              <option value="sly">😈 Sly &amp; Mischievous (Smirking Fangs)</option>
+              <option value="custom">🎨 Custom Uploaded SVG Face</option>
+            </select>
+          </div>
+
+          <!-- Position & Dimensions -->
+          <div class="slider-subgroup">
+            <div class="slider-row">
+              <label>Horizontal Position: <span id="val-pos-x">0px</span></label>
+              <input type="range" id="slider-pos-x" min="-1200" max="1200" step="2" value="0">
+            </div>
+            <div class="slider-row">
+              <label>Vertical Position: <span id="val-pos-y">0px</span></label>
+              <input type="range" id="slider-pos-y" min="-800" max="800" step="2" value="0">
+            </div>
+            <div class="slider-row-2col">
+              <div>
+                <label>Horizontal Scale: <span id="val-scale-x">1.00</span></label>
+                <input type="range" id="slider-scale-x" min="0.2" max="3.0" step="0.02" value="1.0">
+              </div>
+              <div>
+                <label>Vertical Scale: <span id="val-scale-y">1.00</span></label>
+                <input type="range" id="slider-scale-y" min="0.2" max="3.0" step="0.02" value="1.0">
+              </div>
+            </div>
+            <div class="slider-row">
+              <label>Rotation: <span id="val-rot">0°</span></label>
+              <input type="range" id="slider-rot" min="-180" max="180" step="1" value="0">
+            </div>
+          </div>
+
+          <!-- 4-Corner Keystone Interactive Pad & Controls -->
+          <div class="keystone-container">
+            <h4>4-Corner Keystone Pinning</h4>
+            <div class="keystone-widget-row">
+              <div class="keystone-pad-wrap">
+                <canvas id="keystone-canvas" width="180" height="180"></canvas>
+                <span class="pad-caption">Drag corners to keystone</span>
+              </div>
+              <div class="quick-keystone-col">
+                <div class="slider-group">
+                  <label>Vertical Keystone (Taper Vert)</label>
+                  <input type="range" id="slider-keystone-v" min="-120" max="120" step="2" value="0">
+                </div>
+                <div class="slider-group">
+                  <label>Horizontal Keystone (Taper Horiz)</label>
+                  <input type="range" id="slider-keystone-h" min="-120" max="120" step="2" value="0">
+                </div>
+                <div class="btn-group">
+                  <button id="btn-reset-keystone" class="btn warning small">Reset Keystone (X)</button>
+                  <button id="btn-reset-tf" class="btn danger small">Reset All (R)</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Direct Corner Offsets Grid -->
+            <div class="corner-inputs-grid">
+              <div class="corner-cell">
+                <strong>Top-Left (7)</strong>
+                <span>Horiz: <input type="number" id="inp-tl-x" class="num-inp" value="0"></span>
+                <span>Vert: <input type="number" id="inp-tl-y" class="num-inp" value="0"></span>
+              </div>
+              <div class="corner-cell">
+                <strong>Top-Right (8)</strong>
+                <span>Horiz: <input type="number" id="inp-tr-x" class="num-inp" value="0"></span>
+                <span>Vert: <input type="number" id="inp-tr-y" class="num-inp" value="0"></span>
+              </div>
+              <div class="corner-cell">
+                <strong>Bottom-Left (9)</strong>
+                <span>Horiz: <input type="number" id="inp-bl-x" class="num-inp" value="0"></span>
+                <span>Vert: <input type="number" id="inp-bl-y" class="num-inp" value="0"></span>
+              </div>
+              <div class="corner-cell">
+                <strong>Bottom-Right (0)</strong>
+                <span>Horiz: <input type="number" id="inp-br-x" class="num-inp" value="0"></span>
+                <span>Vert: <input type="number" id="inp-br-y" class="num-inp" value="0"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calibration Diagnostics -->
+          <div class="stage-diagnostics">
+            <h4>Calibration Diagnostics</h4>
+            <div class="btn-group">
+              <button id="btn-toggle-grid" class="btn small" data-key="h">Grid (H)</button>
+              <button id="btn-toggle-black-card" class="btn small" data-key="k">Black Card (K)</button>
+              <button id="btn-blackout" class="btn danger small" data-key="b">Blackout (B)</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Setup Column 2: Voice DSP Authoring, Audio Delay & Asset Loaders -->
+        <section class="desk-card audio-setup-section">
+          <div class="section-header-row">
+            <h3>🎃 Voice DSP Authoring Rack</h3>
+            <span class="status-badge" style="background: rgba(16,185,129,0.15); color: #10b981; border-color: rgba(16,185,129,0.3);">Authoring</span>
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); margin: 0 0 8px 0;">
+            Adjust sliders to shape Jack's voice. Click <strong>+ Save as Preset</strong> to add it to the live show picker.
+          </p>
+
+          <div class="voice-dsp-box">
+            <div class="slider-group">
+              <label for="slider-voice-pitch">Pitch Shift: <span id="val-voice-pitch">-6 st (Deeper)</span></label>
+              <input type="range" id="slider-voice-pitch" min="-12" max="6" step="1" value="-6">
+            </div>
+
+            <div class="slider-group">
+              <label for="slider-voice-sub">Subwoofer Power (&lt; 90Hz): <span id="val-voice-sub">+14 dB (Heavy Subs)</span></label>
+              <input type="range" id="slider-voice-sub" min="0" max="20" step="1" value="14">
+            </div>
+
+            <div class="slider-group">
+              <label for="slider-voice-gourd">Pumpkin Gourd Body (240Hz): <span id="val-voice-gourd">+6 dB</span></label>
+              <input type="range" id="slider-voice-gourd" min="0" max="12" step="1" value="6">
+            </div>
+
+            <div class="slider-row-2col">
+              <div>
+                <label for="slider-voice-drive">Monster Growl: <span id="val-voice-drive">28%</span></label>
+                <input type="range" id="slider-voice-drive" min="0" max="100" step="5" value="28">
+              </div>
+              <div>
+                <label for="slider-voice-reverb">Cavern Echo: <span id="val-voice-reverb">25%</span></label>
+                <input type="range" id="slider-voice-reverb" min="0" max="100" step="5" value="25">
+              </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 10px;">
+              <button id="btn-save-dsp-preset" class="btn primary small" style="width: 100%;">
+                💾 + Save Sliders as Show Preset
+              </button>
+            </div>
+          </div>
+
+          <div class="slider-group" style="margin-top: 10px;">
+            <label for="slider-gate">Noise Gate: <span id="val-gate">0.012</span> (Keys: [ / ])</label>
+            <input type="range" id="slider-gate" min="0.002" max="0.08" step="0.002" value="0.012">
+          </div>
+
+          <div class="slider-group">
+            <label for="slider-smooth">Mouth Smoothing: <span id="val-smooth">0.30</span></label>
+            <input type="range" id="slider-smooth" min="0.05" max="0.95" step="0.05" value="0.30">
+          </div>
+
+          <div class="slider-group">
+            <label for="slider-delay">Cast Audio Delay (Speaker Sync): <span id="val-delay">0 ms</span> (Keys: - / =)</label>
+            <input type="range" id="slider-delay" min="0" max="1500" step="50" value="0">
+          </div>
+
+          <!-- Asset Loading -->
+          <div class="file-loaders" style="margin-top: 12px;">
+            <h4>Asset Loading</h4>
+            <div class="file-row">
+              <label class="btn small file-btn">
+                Load SVG Face
+                <input type="file" id="file-svg" accept=".svg" hidden>
+              </label>
+              <span id="svg-name" class="file-name">Built-in Cartoon SVGs</span>
+            </div>
+            <div class="file-row">
+              <label class="btn small file-btn">
+                Load Audio Song
+                <input type="file" id="file-audio" accept="audio/*" hidden>
+              </label>
+              <span id="audio-name" class="file-name">Procedural Synth</span>
+              <button id="btn-clear-audio" class="btn small" style="display: none; padding: 2px 6px;">✕</button>
+            </div>
+            <div class="file-row">
+              <label class="btn small file-btn">
+                Load Timeline JSON
+                <input type="file" id="file-timeline" accept=".json" hidden>
+              </label>
+              <span id="timeline-name" class="file-name">jokes.json</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Video Show Mode Sections (In Setup Drawer) -->
+        <section id="card-video-player" class="desk-card video-section" style="display: none;">
+          <div class="section-header-row">
+            <h3>🎬 Video Show Playback</h3>
+            <span id="video-status-badge" class="status-badge" style="background: rgba(16,185,129,0.15); color: #10b981; border-color: rgba(16,185,129,0.3);">Ready</span>
+          </div>
+
+          <div class="video-source-box">
+            <div class="file-drop-zone" id="video-drop-zone">
+              <div class="drop-zone-content">
+                <span class="drop-icon" style="font-size: 28px;">📹</span>
+                <strong id="video-current-title" style="color: #fff; word-break: break-all;">sample-trio.mp4 (Built-in 3-Pumpkin Trio)</strong>
+                <span class="drop-hint" style="font-size: 11px; color: var(--text-muted);">Drop .mp4 / .mov / .webm here, or</span>
+                <label class="btn primary small file-btn" style="cursor: pointer;">
+                  📂 Choose Local Video File
+                  <input type="file" id="file-video-input" accept="video/mp4,video/webm,video/quicktime,video/*" hidden>
+                </label>
+              </div>
+              <div id="video-upload-progress" class="upload-progress-bar" style="display: none;">
+                <div class="upload-progress-fill" id="video-upload-fill"></div>
+              </div>
+            </div>
+
+            <div class="style-select-row" style="margin-top: 10px;">
+              <label for="select-server-videos">Video Library:</label>
+              <select id="select-server-videos" class="select-input">
+                <option value="/videos/sample-trio.mp4">🎃 sample-trio.mp4 (Built-in 3-Pumpkin Trio)</option>
+              </select>
+              <button id="btn-refresh-videos" class="btn small" title="Refresh server video list">🔄</button>
+            </div>
+          </div>
+
+          <div class="video-controls-box">
+            <div class="btn-group" style="align-items: center; margin-bottom: 8px;">
+              <button id="btn-video-play" class="btn primary small">▶ Play</button>
+              <button id="btn-video-pause" class="btn small">⏸ Pause</button>
+              <button id="btn-video-stop" class="btn small">⏹ Stop</button>
+              <label style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer; margin-left: 8px;">
+                <input type="checkbox" id="chk-video-loop" checked style="accent-color: var(--accent);">
+                Loop
+              </label>
+            </div>
+
+            <div class="slider-group">
+              <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">
+                <span>Timeline Scrubber</span>
+                <span id="val-video-time" style="font-family: monospace; color: #fff;">00:00 / 00:08</span>
+              </div>
+              <input type="range" id="slider-video-scrub" min="0" max="8" step="0.05" value="0" style="width: 100%;">
+            </div>
+
+            <div class="slider-row-2col" style="margin-top: 6px;">
+              <div class="slider-group">
+                <label for="slider-video-vol">Volume: <span id="val-video-vol">85%</span></label>
+                <input type="range" id="slider-video-vol" min="0" max="1" step="0.05" value="0.85">
+              </div>
+              <div style="display: flex; align-items: flex-end; padding-bottom: 8px;">
+                <button id="btn-video-mute" class="btn small" style="width: 100%;">🔊 Audio On</button>
+              </div>
+            </div>
+
+            <div class="slider-group" style="margin-top: 6px;">
+              <label for="slider-edge-feather">Pumpkin Edge Softening: <span id="val-edge-feather">16px</span></label>
+              <input type="range" id="slider-edge-feather" min="0" max="50" step="2" value="16">
+            </div>
+          </div>
+
+          <div class="stage-diagnostics" style="margin-top: 14px;">
+            <h4>Stage Diagnostics</h4>
+            <div class="btn-group">
+              <button id="btn-video-toggle-grid" class="btn small">Grid (H)</button>
+              <button id="btn-video-toggle-black-card" class="btn small">Black Card (K)</button>
+              <button id="btn-video-blackout" class="btn danger small">Blackout (B)</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="card-video-crops" class="desk-card video-crop-section" style="display: none;">
+          <div class="section-header-row">
+            <h3>📐 Video Mapping &amp; Crops</h3>
+          </div>
+
+          <div class="style-select-row">
+            <label for="select-video-layout">Layout Mode:</label>
+            <select id="select-video-layout" class="select-input">
+              <option value="tri-split">🎃 Tri-Pumpkin Split (Left, Center, Right Thirds)</option>
+              <option value="single">🎯 Single Video onto Focused Pumpkin</option>
+            </select>
+          </div>
+
+          <div class="crop-adjust-box">
+            <h4 style="font-size: 12px; color: #fff; margin: 0 0 8px 0;">Horizontal &amp; Vertical Crop Regions</h4>
+            <div class="crop-slot-group">
+              <div class="crop-slot-header" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                <strong style="color: #60a5fa;">1. Left Pumpkin Crop</strong>
+                <span id="val-crop-left" style="font-family: monospace;">H: 0%–33% | V: 0%–100%</span>
+              </div>
+              <div class="slider-row-2col">
+                <div>
+                  <label>H Start: <span id="val-crop-left-x">0%</span></label>
+                  <input type="range" id="slider-crop-left-x" min="0" max="0.8" step="0.01" value="0">
+                </div>
+                <div>
+                  <label>H Width: <span id="val-crop-left-w">33%</span></label>
+                  <input type="range" id="slider-crop-left-w" min="0.1" max="1.0" step="0.01" value="0.33">
+                </div>
+              </div>
+              <div class="slider-row-2col" style="margin-top: 6px;">
+                <div>
+                  <label>V Start: <span id="val-crop-left-y">0%</span></label>
+                  <input type="range" id="slider-crop-left-y" min="0" max="0.8" step="0.01" value="0">
+                </div>
+                <div>
+                  <label>V Height: <span id="val-crop-left-h">100%</span></label>
+                  <input type="range" id="slider-crop-left-h" min="0.1" max="1.0" step="0.01" value="1.0">
+                </div>
+              </div>
+            </div>
+
+            <div class="crop-slot-group" style="margin-top: 10px;">
+              <div class="crop-slot-header" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                <strong style="color: #fbbf24;">2. Center Pumpkin Crop</strong>
+                <span id="val-crop-center" style="font-family: monospace;">H: 33%–67% | V: 0%–100%</span>
+              </div>
+              <div class="slider-row-2col">
+                <div>
+                  <label>H Start: <span id="val-crop-center-x">33%</span></label>
+                  <input type="range" id="slider-crop-center-x" min="0" max="0.8" step="0.01" value="0.33">
+                </div>
+                <div>
+                  <label>H Width: <span id="val-crop-center-w">34%</span></label>
+                  <input type="range" id="slider-crop-center-w" min="0.1" max="1.0" step="0.01" value="0.34">
+                </div>
+              </div>
+              <div class="slider-row-2col" style="margin-top: 6px;">
+                <div>
+                  <label>V Start: <span id="val-crop-center-y">0%</span></label>
+                  <input type="range" id="slider-crop-center-y" min="0" max="0.8" step="0.01" value="0">
+                </div>
+                <div>
+                  <label>V Height: <span id="val-crop-center-h">100%</span></label>
+                  <input type="range" id="slider-crop-center-h" min="0.1" max="1.0" step="0.01" value="1.0">
+                </div>
+              </div>
+            </div>
+
+            <div class="crop-slot-group" style="margin-top: 10px;">
+              <div class="crop-slot-header" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                <strong style="color: #f87171;">3. Right Pumpkin Crop</strong>
+                <span id="val-crop-right" style="font-family: monospace;">H: 67%–100% | V: 0%–100%</span>
+              </div>
+              <div class="slider-row-2col">
+                <div>
+                  <label>H Start: <span id="val-crop-right-x">67%</span></label>
+                  <input type="range" id="slider-crop-right-x" min="0" max="0.9" step="0.01" value="0.67">
+                </div>
+                <div>
+                  <label>H Width: <span id="val-crop-right-w">33%</span></label>
+                  <input type="range" id="slider-crop-right-w" min="0.1" max="1.0" step="0.01" value="0.33">
+                </div>
+              </div>
+              <div class="slider-row-2col" style="margin-top: 6px;">
+                <div>
+                  <label>V Start: <span id="val-crop-right-y">0%</span></label>
+                  <input type="range" id="slider-crop-right-y" min="0" max="0.8" step="0.01" value="0">
+                </div>
+                <div>
+                  <label>V Height: <span id="val-crop-right-h">100%</span></label>
+                  <input type="range" id="slider-crop-right-h" min="0.1" max="1.0" step="0.01" value="1.0">
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px;">
+              <button id="btn-reset-crops" class="btn small" style="width: 100%;">Reset Default 3-Way Thirds</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Setup Keyboard Shortcuts Legend Reference -->
+      <div class="desk-card key-reference" style="margin-top: 16px;">
+        <h3>Full Keyboard Shortcut Reference (Active During Show)</h3>
+        <div class="key-table">
+          <div><code>1</code> <code>2</code> <code>3</code> Focus Left/Center/Right</div>
+          <div><code>M</code> Toggle Mapping Mode (Wireframe)</div>
+          <div><code>Tab</code> Cycle Keystone Corner Edit</div>
+          <div><code>7</code> <code>8</code> <code>9</code> <code>0</code> Select Corner (TL/TR/BL/BR)</div>
+          <div><code>Arrows</code> Nudge Active Corner (When Setup Open) / Look Left/Center/Right (Live)</div>
+          <div><code>Shift+Arrows</code> Nudge Entire Puppet (8px)</div>
+          <div><code>Alt+[</code> <code>Alt+]</code> Scale Uniform</div>
+          <div><code>Alt+Shift+[</code> <code>]</code> Scale Height Only</div>
+          <div><code>,</code> <code>.</code> Rotate Puppet</div>
+          <div><code>X</code> Reset Keystone</div>
+          <div><code>R</code> Reset Puppet Transform</div>
+          <div><code>A</code> / <code>Space</code> Arm/Disarm Microphone (Talk)</div>
+          <div><code>F</code> Flame Mouth Toggle</div>
+          <div><code>Shift+F</code> Eye + Mouth Flames (Hold)</div>
+          <div><code>I</code> Freeze / Thaw</div>
+          <div><code>Shift+S</code> Scream</div>
+          <div><code>Z</code> Sleep Toggle</div>
+          <div><code>W</code> Wink</div>
+          <div><code>←</code> <code>→</code> <code>↓</code> Look Left / Right / Center</div>
+          <div><code>Enter</code> Play / Stop Show Song</div>
+          <div><code>B</code> / <code>Esc</code> Panic Blackout</div>
+          <div><code>[</code> <code>]</code> Noise Gate Down / Up</div>
+          <div><code>-</code> <code>=</code> Cast Delay - / + (50ms)</div>
+          <div><code>H</code> Calibration Grid</div>
+          <div><code>K</code> Black-Level Test Card</div>
+        </div>
       </div>
     </div>
 
-    <div class="desk-grid">
-      <!-- Column 1A: Audio & Voice (Procedural Mode) -->
-      <section id="card-audio-voice" class="desk-card audio-section">
-        <h2>Audio & Voice</h2>
-        
-        <div class="control-row">
-          <button id="btn-arm-mic" class="btn primary">Arm Microphone (Talk)</button>
-          <span id="mic-status" class="status-text">Mic Disarmed</span>
-        </div>
+    <!-- LAYER 1: SHOW SURFACE (DEFAULT PERFORMANCE LAYER - ALWAYS VISIBLE) -->
+    <div id="show-surface" class="show-surface">
+      <div class="show-grid">
+        <!-- Stack 1: Classic Cartoon Jack (Center Singing Leader) -->
+        <section id="card-audio-voice" class="desk-card jack-stack">
+          <div class="section-header-row">
+            <h2>🎃 Classic Cartoon Jack</h2>
+            <span class="role-badge center-role">Singing Leader &amp; Mic Lead</span>
+          </div>
 
-        <!-- Voice Transmission & Clean Passthrough Test Controls -->
-        <div class="voice-transmit-box" style="margin: 8px 0 12px 0; padding: 12px; background: rgba(255,117,24,0.06); border: 1px solid rgba(255,117,24,0.25); border-radius: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <strong style="color: #fff; font-size: 13px;">🎙️ Stage & Cast Voice Transmission</strong>
-            <div style="display: flex; gap: 6px; align-items: center;">
-              <span id="badge-cast-audio" class="status-badge" style="background: rgba(156,163,175,0.15); color: #9ca3af; border-color: rgba(156,163,175,0.3);">Cast Audio: Standby</span>
-              <span id="badge-voice-transmit" class="status-badge" style="background: rgba(156,163,175,0.15); color: #9ca3af; border-color: rgba(156,163,175,0.3);">Muted</span>
+          <!-- Giant Arm Microphone Button -->
+          <div class="mic-arm-container">
+            <button id="btn-arm-mic" class="btn primary mic-master-btn">Arm Microphone (Talk)</button>
+            <div class="mic-meta-row">
+              <span id="mic-status" class="status-text">Mic Disarmed</span>
+              <span class="shortcut-tag">[A] or [Space]</span>
             </div>
           </div>
 
-          <div class="btn-group" style="margin-bottom: 10px;">
-            <button id="btn-toggle-voice-transmit" class="btn small" style="flex: 1;">📢 Cast Voice to Stage: ON</button>
-            <button id="btn-voice-clean-toggle" class="btn small active" style="flex: 1;" title="Toggle between direct clean mic and Halloween DSP">🎙️ Clean Passthrough</button>
-          </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px; color: var(--text-muted);">
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="chk-local-monitor" style="accent-color: var(--accent);">
-              <span>💻 Local Laptop Monitor (Hear on Mac speakers)</span>
-            </label>
-          </div>
-
-          <div class="slider-group" style="margin-bottom: 0;">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">
-              <span>Master Voice Volume</span>
-              <span id="val-master-voice-vol" style="font-family: monospace; color: #fff;">100%</span>
+          <!-- Mic RMS Level Meter -->
+          <div class="meter-container">
+            <label>Live Mic Level / RMS</label>
+            <div class="meter-bar-wrapper">
+              <div id="meter-level" class="meter-level"></div>
+              <div id="meter-gate-marker" class="meter-gate-marker"></div>
             </div>
-            <input type="range" id="slider-master-voice-vol" min="0" max="2.0" step="0.05" value="1.0" style="width: 100%;">
-          </div>
-          <input type="checkbox" id="chk-monitor" hidden>
-        </div>
-
-        <div class="meter-container">
-          <label>Mic Level / RMS</label>
-          <div class="meter-bar-wrapper">
-            <div id="meter-level" class="meter-level"></div>
-            <div id="meter-gate-marker" class="meter-gate-marker"></div>
-          </div>
-          <div class="meter-legend">
-            <span>0%</span>
-            <span id="meter-val-text">0%</span>
-            <span>100%</span>
-          </div>
-        </div>
-
-        <!-- Halloween Voice Synth & Subwoofer DSP Rack -->
-        <div class="voice-dsp-box">
-          <div class="section-header-row" style="margin-bottom: 0;">
-            <h3 style="margin: 0; color: #fff;">🎃 Halloween Voice & Subs DSP</h3>
-            <span class="status-badge" style="background: rgba(16,185,129,0.15); color: #10b981; border-color: rgba(16,185,129,0.3);">Active</span>
+            <div class="meter-legend">
+              <span>0%</span>
+              <span id="meter-val-text">0%</span>
+              <span>100%</span>
+            </div>
           </div>
 
+          <!-- Master Volume & Live Cast Voice Status -->
+          <div class="jack-audio-strip">
+            <div class="slider-group" style="margin-bottom: 0;">
+              <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 4px;">
+                <span>Master Voice Volume</span>
+                <span id="val-master-voice-vol" style="font-family: monospace; color: #fff;">100%</span>
+              </div>
+              <input type="range" id="slider-master-voice-vol" min="0" max="2.0" step="0.05" value="1.0" style="width: 100%;">
+            </div>
+
+            <div class="btn-group" style="margin-top: 8px;">
+              <button id="btn-toggle-voice-transmit" class="btn small" style="flex: 1;">📢 Cast Voice: ON</button>
+              <button id="btn-voice-clean-toggle" class="btn small active" style="flex: 1;" title="Toggle clean mic passthrough">🎙️ Clean Passthrough</button>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--text-muted);">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="chk-local-monitor" style="accent-color: var(--accent);">
+                <span>💻 Mac Speakers Monitor</span>
+              </label>
+              <input type="checkbox" id="chk-monitor" hidden>
+            </div>
+          </div>
+
+          <!-- Instant DSP Preset Picker (No Sliders on Show Surface) -->
           <div class="style-select-row" style="margin-top: 4px;">
-            <label for="select-voice-preset">Preset:</label>
+            <label for="select-voice-preset">DSP Preset:</label>
             <select id="select-voice-preset" class="select-input">
               <option value="deep_jack">🎃 Deep Jack-o'-Lantern (Default)</option>
-              <option value="demon">😈 Demonic Fiend (Sub Growl & Heavy Rumble)</option>
+              <option value="demon">😈 Demonic Fiend (Sub Growl &amp; Heavy Rumble)</option>
               <option value="phantom">👻 Ethereal Hollow Spirit</option>
               <option value="goblin">🤪 High Goblin / Imp</option>
               <option value="clean">🎙️ Clean Passthrough</option>
             </select>
           </div>
+          <p class="jack-note">Instant preset switch. Full DSP sliders live inside Setup.</p>
+        </section>
 
-          <div class="slider-group">
-            <label for="slider-voice-pitch">Pitch Shift: <span id="val-voice-pitch">-6 st (Deeper)</span></label>
-            <input type="range" id="slider-voice-pitch" min="-12" max="6" step="1" value="-6">
+        <!-- Stack 2: Sides Stack (Goofy Bucktooth & Sly & Mischievous + Both) -->
+        <section id="card-procedural-actions" class="desk-card sides-stack">
+          <div class="section-header-row">
+            <h2>🤪 Goofy &amp; 😈 Sly (Sides)</h2>
+            <span class="role-badge sides-role">Prerecorded Lines &amp; Sfx</span>
           </div>
 
-          <div class="slider-group">
-            <label for="slider-voice-sub">Subwoofer Power (&lt; 90Hz): <span id="val-voice-sub">+14 dB (Heavy Subs)</span></label>
-            <input type="range" id="slider-voice-sub" min="0" max="20" step="1" value="14">
-          </div>
-
-          <div class="slider-group">
-            <label for="slider-voice-gourd">Pumpkin Gourd Body (240Hz): <span id="val-voice-gourd">+6 dB</span></label>
-            <input type="range" id="slider-voice-gourd" min="0" max="12" step="1" value="6">
-          </div>
-
-          <div class="slider-row-2col">
-            <div>
-              <label for="slider-voice-drive">Monster Growl: <span id="val-voice-drive">28%</span></label>
-              <input type="range" id="slider-voice-drive" min="0" max="100" step="5" value="28">
+          <!-- Both Sides Trigger Bar -->
+          <div class="both-sides-bar">
+            <div class="both-bar-header">
+              <strong>🎭 Fire Both Sides Together:</strong>
+              <span class="both-note">Plays matching cue on Left &amp; Right simultaneously</span>
             </div>
-            <div>
-              <label for="slider-voice-reverb">Cavern Echo: <span id="val-voice-reverb">25%</span></label>
-              <input type="range" id="slider-voice-reverb" min="0" max="100" step="5" value="25">
+            <div class="both-btn-grid">
+              <button class="btn small btn-both-cue" data-oneshot-both="laugh">😆 Both Laugh</button>
+              <button class="btn small btn-both-cue" data-oneshot-both="playful_boo">👻 Both Boo</button>
+              <button class="btn small btn-both-cue" data-oneshot-both="name">❓ Both Ask Name</button>
+              <button class="btn small btn-both-cue" data-oneshot-both="knock_knock">🚪 Both Knock Knock</button>
+              <button class="btn small btn-both-cue" data-oneshot-both="trick_or_treat">🍬 Both Trick or Treat</button>
+              <button class="btn small btn-both-cue" data-oneshot-both="see_ya">👋 Both Bye</button>
             </div>
           </div>
-        </div>
 
-        <div class="slider-group">
-          <label for="slider-gate">Noise Gate: <span id="val-gate">0.012</span> (Keys: [ / ])</label>
-          <input type="range" id="slider-gate" min="0.002" max="0.08" step="0.002" value="0.012">
-        </div>
+          <div class="sides-columns-grid">
+            <!-- Goofy Bucktooth Sub-card (Left) -->
+            <div class="character-subcard goofy-card">
+              <div class="subcard-header">
+                <div class="subcard-title-group">
+                  <h3>🤪 Goofy Bucktooth</h3>
+                  <span class="slot-tag left-slot">Left</span>
+                </div>
+                <span class="subcard-role-desc">Comic Relief (Silly &amp; Bouncy)</span>
+              </div>
 
-        <div class="slider-group">
-          <label for="slider-smooth">Mouth Smoothing: <span id="val-smooth">0.30</span></label>
-          <input type="range" id="slider-smooth" min="0.05" max="0.95" step="0.05" value="0.30">
-        </div>
+              <!-- React Bank -->
+              <div class="bank-group">
+                <span class="bank-title">React</span>
+                <div class="oneshot-grid">
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="laugh">😆 Hyuck Laugh</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="giggle">🤭 Giggle</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="gasp">😲 Silly Gasp</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="whoa">🌀 Whoaaaa!</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="agreement">👍 Yup Yup!</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="playful_boo">👻 Booo-hoo!</button>
+                </div>
+              </div>
 
-        <div class="slider-group">
-          <label for="slider-delay">Cast Audio Delay: <span id="val-delay">0 ms</span> (Keys: - / =)</label>
-          <input type="range" id="slider-delay" min="0" max="1500" step="50" value="0">
-        </div>
+              <!-- Ask Bank -->
+              <div class="bank-group">
+                <span class="bank-title">Ask</span>
+                <div class="oneshot-grid">
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="name">❓ Your Name?</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="brave">💪 You Brave?</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="trick_or_treat">🍬 Trick / Treat</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="secret">🤫 Spooky Secret</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="knock_knock">🚪 Knock Knock</button>
+                </div>
+              </div>
 
-        <div class="stage-diagnostics">
-          <h3>Stage Diagnostics</h3>
-          <div class="btn-group">
-            <button id="btn-toggle-grid" class="btn" data-key="h">Grid (H)</button>
-            <button id="btn-toggle-black-card" class="btn" data-key="k">Black Card (K)</button>
-            <button id="btn-blackout" class="btn danger" data-key="b">Blackout (B)</button>
+              <!-- Bits Bank -->
+              <div class="bank-group">
+                <span class="bank-title">Bits</span>
+                <div class="oneshot-grid">
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="joke">🃏 Squished Joke</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="costume">👑 Great Costume</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="candy">🍭 Smell Like Candy</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="boing">🤪 Boing Sfx</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="raspberry">👅 Raspberry</button>
+                </div>
+              </div>
+
+              <!-- Bye Bank -->
+              <div class="bank-group">
+                <span class="bank-title">Bye</span>
+                <div class="oneshot-grid">
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="see_ya">👋 See Ya!</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="yawn">🥱 Big Yawn</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="left" data-oneshot-clip="goodnight">🌙 Nighty Night</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sly & Mischievous Sub-card (Right) -->
+            <div class="character-subcard sly-card">
+              <div class="subcard-header">
+                <div class="subcard-title-group">
+                  <h3>😈 Sly &amp; Mischievous</h3>
+                  <span class="slot-tag right-slot">Right</span>
+                </div>
+                <span class="subcard-role-desc">Smirking Fangs (Sarcastic &amp; Spooky)</span>
+              </div>
+
+              <!-- Sly Spooky Bank Toggle (On Sly Only) -->
+              <div class="spooky-toggle-bar">
+                <button id="btn-toggle-spooky-bank" class="btn spooky-toggle-btn" title="Toggle extra spooky bank clips">
+                  ⚠️ Sly Spooky Bank: OFF (Safe)
+                </button>
+                <span class="spooky-note">Default bank is family-safe.</span>
+              </div>
+
+              <!-- Sly Spooky Bank (Hidden unless toggled) -->
+              <div id="sly-spooky-bank-group" class="bank-group spooky-bank-container" style="display: none;">
+                <span class="bank-title spooky-title">⚠️ Spooky Bank (Active)</span>
+                <div class="oneshot-grid">
+                  <button class="btn oneshot-btn spooky-btn" data-oneshot-slot="right" data-oneshot-clip="whisper">👁️ Whisper</button>
+                  <button class="btn oneshot-btn spooky-btn" data-oneshot-slot="right" data-oneshot-clip="threat">🎃 Don't Roll Off!</button>
+                  <button class="btn oneshot-btn spooky-btn" data-oneshot-slot="right" data-oneshot-clip="sting">⚡ Horror Sting</button>
+                  <button class="btn oneshot-btn spooky-btn" data-oneshot-slot="right" data-oneshot-clip="creak">🚪 Gate Creak</button>
+                  <button class="btn oneshot-btn spooky-btn" data-oneshot-slot="right" data-oneshot-clip="cackle">😈 Villain Cackle</button>
+                </div>
+              </div>
+
+              <!-- React Bank -->
+              <div class="bank-group">
+                <span class="bank-title">React</span>
+                <div class="oneshot-grid">
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="laugh">😏 Sarcastic Laugh</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="giggle">😼 Snicker</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="gasp">🤨 Sharp Intake</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="whoa">🕶️ Whoa Now...</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="agreement">👌 Naturally</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="playful_boo">🦇 Low Booo...</button>
+                </div>
+              </div>
+
+              <!-- Ask Bank -->
+              <div class="bank-group">
+                <span class="bank-title">Ask</span>
+                <div class="oneshot-grid">
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="name">❓ Who Approaches?</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="brave">👁️ Think You're Brave?</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="trick_or_treat">🔮 Choose Wisely</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="secret">🗝️ I Know Your Secret</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="knock_knock">🚪 Who Dares?</button>
+                </div>
+              </div>
+
+              <!-- Bits Bank -->
+              <div class="bank-group">
+                <span class="bank-title">Bits</span>
+                <div class="oneshot-grid">
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="joke">💀 No Stomach Joke</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="costume">🎭 Curious Disguise</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="candy">🍫 Hand Over Candy</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="snicker">🧛 Fang Hiss</button>
+                </div>
+              </div>
+
+              <!-- Bye Bank -->
+              <div class="bank-group">
+                <span class="bank-title">Bye</span>
+                <div class="oneshot-grid">
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="see_ya">⏳ Until Next Year</button>
+                  <button class="btn oneshot-btn" data-oneshot-slot="right" data-oneshot-clip="goodnight">🕯️ Pleasant Dreams</button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      <!-- Column 1B: Video Player & Source (Video Mode) -->
-      <section id="card-video-player" class="desk-card video-section" style="display: none;">
+      <!-- Shared Performance Row: Instant Face Actions (Targets Focused Pumpkin) -->
+      <section class="desk-card performance-row-card">
         <div class="section-header-row">
-          <h2>🎬 Video Show Playback</h2>
-          <span id="video-status-badge" class="status-badge" style="background: rgba(16,185,129,0.15); color: #10b981; border-color: rgba(16,185,129,0.3);">Ready</span>
+          <h2>🎭 Shared Face Actions (Targets Focused Pumpkin)</h2>
+          <span class="focus-indicator">Active Target: <strong id="focus-name">Center</strong></span>
         </div>
-
-        <!-- Video Source Selection -->
-        <div class="video-source-box">
-          <div class="file-drop-zone" id="video-drop-zone">
-            <div class="drop-zone-content">
-              <span class="drop-icon" style="font-size: 28px;">📹</span>
-              <strong id="video-current-title" style="color: #fff; word-break: break-all;">sample-trio.mp4 (Built-in 3-Pumpkin Trio)</strong>
-              <span class="drop-hint" style="font-size: 11px; color: var(--text-muted);">Drop .mp4 / .mov / .webm here, or</span>
-              <label class="btn primary small file-btn" style="cursor: pointer;">
-                📂 Choose Local Video File
-                <input type="file" id="file-video-input" accept="video/mp4,video/webm,video/quicktime,video/*" hidden>
-              </label>
-            </div>
-            <div id="video-upload-progress" class="upload-progress-bar" style="display: none;">
-              <div class="upload-progress-fill" id="video-upload-fill"></div>
-            </div>
-          </div>
-
-          <div class="style-select-row" style="margin-top: 10px;">
-            <label for="select-server-videos">Video Library:</label>
-            <select id="select-server-videos" class="select-input">
-              <option value="/videos/sample-trio.mp4">🎃 sample-trio.mp4 (Built-in 3-Pumpkin Trio)</option>
-            </select>
-            <button id="btn-refresh-videos" class="btn small" title="Refresh server video list">🔄</button>
-          </div>
-        </div>
-
-        <!-- Video Playback Controls -->
-        <div class="video-controls-box">
-          <div class="btn-group" style="align-items: center; margin-bottom: 8px;">
-            <button id="btn-video-play" class="btn primary">▶ Play</button>
-            <button id="btn-video-pause" class="btn">⏸ Pause</button>
-            <button id="btn-video-stop" class="btn">⏹ Stop</button>
-            <label style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer; margin-left: 8px;">
-              <input type="checkbox" id="chk-video-loop" checked style="accent-color: var(--accent);">
-              Loop
-            </label>
-          </div>
-
-          <!-- Scrubber -->
-          <div class="slider-group">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">
-              <span>Timeline Scrubber</span>
-              <span id="val-video-time" style="font-family: monospace; color: #fff;">00:00 / 00:08</span>
-            </div>
-            <input type="range" id="slider-video-scrub" min="0" max="8" step="0.05" value="0" style="width: 100%;">
-          </div>
-
-          <!-- Volume & Mute -->
-          <div class="slider-row-2col" style="margin-top: 6px;">
-            <div class="slider-group">
-              <label for="slider-video-vol">Volume: <span id="val-video-vol">85%</span></label>
-              <input type="range" id="slider-video-vol" min="0" max="1" step="0.05" value="0.85">
-            </div>
-            <div style="display: flex; align-items: flex-end; padding-bottom: 8px;">
-              <button id="btn-video-mute" class="btn small" style="width: 100%;">🔊 Audio On</button>
-            </div>
-          </div>
-
-          <!-- Edge Softening (Feather Vignette) -->
-          <div class="slider-group" style="margin-top: 6px;">
-            <label for="slider-edge-feather">Pumpkin Edge Softening: <span id="val-edge-feather">16px</span></label>
-            <input type="range" id="slider-edge-feather" min="0" max="50" step="2" value="16">
-            <span style="font-size: 11px; color: var(--text-muted);">Feathers video borders into pure black so square borders don't spill off pumpkins.</span>
-          </div>
-        </div>
-
-        <!-- Stage Diagnostics (shared) -->
-        <div class="stage-diagnostics" style="margin-top: 14px;">
-          <h3>Stage Diagnostics</h3>
-          <div class="btn-group">
-            <button id="btn-video-toggle-grid" class="btn">Grid (H)</button>
-            <button id="btn-video-toggle-black-card" class="btn">Black Card (K)</button>
-            <button id="btn-video-blackout" class="btn danger">Blackout (B)</button>
-          </div>
+        <div class="performance-actions-grid">
+          <button id="btn-act-flame" class="btn perf-btn" data-action="flame" title="Key: F">🔥 Flame Mouth (F)</button>
+          <button id="btn-act-eyeflame" class="btn perf-btn" data-action="eyeflame" title="Key: Shift+F">👀 Eye Flames (Shift+F)</button>
+          <button id="btn-act-wink" class="btn perf-btn" data-action="wink" title="Key: W">😉 Wink (W)</button>
+          <button id="btn-act-look-l" class="btn perf-btn" data-action="look-left" title="Key: ArrowLeft">⬅️ Look Left (←)</button>
+          <button id="btn-act-look-c" class="btn perf-btn" data-action="look-center" title="Key: ArrowDown">⬇️ Look Center (↓)</button>
+          <button id="btn-act-look-r" class="btn perf-btn" data-action="look-right" title="Key: ArrowRight">➡️ Look Right (→)</button>
+          <button id="btn-act-freeze" class="btn perf-btn" data-action="freeze" title="Key: I">❄️ Freeze / Thaw (I)</button>
+          <button id="btn-act-sleep" class="btn perf-btn" data-action="sleep" title="Key: Z">💤 Sleep Toggle (Z)</button>
+          <button id="btn-act-scream" class="btn danger perf-btn btn-scream" data-action="scream" title="Key: Shift+S">😱 SCREAM (Shift+S)</button>
+          <!-- Hidden legacy triggers for syncBus compatibility -->
+          <button id="btn-act-talk" data-action="talk" hidden></button>
+          <button id="btn-act-smoke" data-action="smoke" hidden></button>
+          <button id="btn-act-lightning" data-action="lightning" hidden></button>
+          <button id="btn-act-soul" data-action="soul" hidden></button>
+          <button id="btn-act-call-resp" data-action="call-response" hidden></button>
+          <button id="btn-act-song" data-action="song" hidden></button>
         </div>
       </section>
 
-      <!-- Column 2: Puppet Focus, Move & Keystone Mapping -->
-      <section class="desk-card puppet-section">
+      <!-- Songs and Routines: Compact Show Player -->
+      <section class="desk-card compact-routine-card">
         <div class="section-header-row">
-          <h2>Pumpkin Mapping & Keystone</h2>
-          <button id="btn-toggle-mapping" class="btn highlight-btn" title="Key: M">Mapping Wireframe (M)</button>
-        </div>
-        
-        <div class="btn-group">
-          <button id="btn-focus-left" class="btn" data-key="1">1: Left</button>
-          <button id="btn-focus-center" class="btn active" data-key="2">2: Center</button>
-          <button id="btn-focus-right" class="btn" data-key="3">3: Right</button>
+          <h2>🎵 Songs &amp; Routines Player</h2>
+          <span id="timeline-status-badge" class="status-badge" style="background: rgba(251,191,36,0.15); color: #fbbf24; border-color: rgba(251,191,36,0.3);">Ready</span>
         </div>
 
-        <div class="style-select-row">
-          <label for="select-face-style">Face Style:</label>
-          <select id="select-face-style" class="select-input">
-            <option value="classic">🎃 Classic Cartoon Jack (Singing Leader)</option>
-            <option value="goofy">🤪 Goofy Bucktooth (Comic Relief)</option>
-            <option value="sly">😈 Sly & Mischievous (Smirking Fangs)</option>
-            <option value="custom">🎨 Custom Uploaded SVG Face</option>
-          </select>
-        </div>
-
-        <!-- Position & Dimensions -->
-        <div class="slider-subgroup">
-          <div class="slider-row">
-            <label>Horizontal Position: <span id="val-pos-x">0px</span></label>
-            <input type="range" id="slider-pos-x" min="-1200" max="1200" step="2" value="0">
-          </div>
-          <div class="slider-row">
-            <label>Vertical Position: <span id="val-pos-y">0px</span></label>
-            <input type="range" id="slider-pos-y" min="-800" max="800" step="2" value="0">
-          </div>
-          <div class="slider-row-2col">
-            <div>
-              <label>Horizontal Scale: <span id="val-scale-x">1.00</span></label>
-              <input type="range" id="slider-scale-x" min="0.2" max="3.0" step="0.02" value="1.0">
-            </div>
-            <div>
-              <label>Vertical Scale: <span id="val-scale-y">1.00</span></label>
-              <input type="range" id="slider-scale-y" min="0.2" max="3.0" step="0.02" value="1.0">
-            </div>
-          </div>
-          <div class="slider-row">
-            <label>Rotation: <span id="val-rot">0°</span></label>
-            <input type="range" id="slider-rot" min="-180" max="180" step="1" value="0">
-          </div>
-        </div>
-
-        <!-- 4-Corner Keystone Interactive Pad & Controls -->
-        <div class="keystone-container">
-          <h3>4-Corner Keystone Pinning</h3>
-          <div class="keystone-widget-row">
-            <!-- Visual Interactive Canvas Pad -->
-            <div class="keystone-pad-wrap">
-              <canvas id="keystone-canvas" width="180" height="180"></canvas>
-              <span class="pad-caption">Drag corners to keystone</span>
-            </div>
-            
-            <!-- Quick Keystone Sliders -->
-            <div class="quick-keystone-col">
-              <div class="slider-group">
-                <label>Vertical Keystone (Taper Vert)</label>
-                <input type="range" id="slider-keystone-v" min="-120" max="120" step="2" value="0">
-              </div>
-              <div class="slider-group">
-                <label>Horizontal Keystone (Taper Horiz)</label>
-                <input type="range" id="slider-keystone-h" min="-120" max="120" step="2" value="0">
-              </div>
-              <div class="btn-group">
-                <button id="btn-reset-keystone" class="btn warning small">Reset Keystone (X)</button>
-                <button id="btn-reset-tf" class="btn danger small">Reset All (R)</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Direct Corner Offsets Grid -->
-          <div class="corner-inputs-grid">
-            <div class="corner-cell">
-              <strong>Top-Left (7)</strong>
-              <span>Horiz: <input type="number" id="inp-tl-x" class="num-inp" value="0"></span>
-              <span>Vert: <input type="number" id="inp-tl-y" class="num-inp" value="0"></span>
-            </div>
-            <div class="corner-cell">
-              <strong>Top-Right (8)</strong>
-              <span>Horiz: <input type="number" id="inp-tr-x" class="num-inp" value="0"></span>
-              <span>Vert: <input type="number" id="inp-tr-y" class="num-inp" value="0"></span>
-            </div>
-            <div class="corner-cell">
-              <strong>Bottom-Left (9)</strong>
-              <span>Horiz: <input type="number" id="inp-bl-x" class="num-inp" value="0"></span>
-              <span>Vert: <input type="number" id="inp-bl-y" class="num-inp" value="0"></span>
-            </div>
-            <div class="corner-cell">
-              <strong>Bottom-Right (0)</strong>
-              <span>Horiz: <input type="number" id="inp-br-x" class="num-inp" value="0"></span>
-              <span>Vert: <input type="number" id="inp-br-y" class="num-inp" value="0"></span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Column 3A: Actions & Triggers (Procedural Mode) -->
-      <section id="card-procedural-actions" class="desk-card actions-section">
-        <h2>One-Shot & State Actions</h2>
-        
-        <div class="action-grid">
-          <button id="btn-act-talk" class="btn" data-action="talk" title="Key: A">Talk Toggle (A)</button>
-          <button id="btn-act-flame" class="btn" data-action="flame" title="Key: F">Flame Mouth (F)</button>
-          <button id="btn-act-eyeflame" class="btn" data-action="eyeflame" title="Key: Shift+F">Eye Flames (Shift+F)</button>
-          <button id="btn-act-freeze" class="btn" data-action="freeze" title="Key: I">Freeze / Thaw (I)</button>
-          <button id="btn-act-smoke" class="btn" data-action="smoke" title="Key: S">Smoke Breath (S)</button>
-          <button id="btn-act-lightning" class="btn" data-action="lightning" title="Key: L">Lightning Eyes (L)</button>
-          <button id="btn-act-soul" class="btn" data-action="soul" title="Key: G">Soul Wisp (G)</button>
-          <button id="btn-act-scream" class="btn danger" data-action="scream" title="Key: Shift+S">Scream (Shift+S)</button>
-          <button id="btn-act-sleep" class="btn" data-action="sleep" title="Key: Z">Sleep Toggle (Z)</button>
-          <button id="btn-act-wink" class="btn" data-action="wink" title="Key: W">Wink (W)</button>
-          <button id="btn-act-look-l" class="btn" data-action="look-left" title="Key: ArrowLeft">Look Left (←)</button>
-          <button id="btn-act-look-c" class="btn" data-action="look-center" title="Key: ArrowDown">Look Center (↓)</button>
-          <button id="btn-act-look-r" class="btn" data-action="look-right" title="Key: ArrowRight">Look Right (→)</button>
-          <button id="btn-act-call-resp" class="btn" data-action="call-response" title="Key: C">Call & Resp (C)</button>
-          <button id="btn-act-song" class="btn" data-action="song" title="Key: Enter">Synthesizer Song</button>
-        </div>
-
-        <!-- Show Timeline & Jokes Conductor -->
-        <div class="timeline-conductor-box">
-          <div class="section-header-row" style="margin-bottom: 0;">
-            <h3 style="margin: 0; color: #fff;">Show & Jokes Conductor</h3>
-            <span id="timeline-status-badge" class="status-badge" style="background: rgba(251,191,36,0.15); color: #fbbf24; border-color: rgba(251,191,36,0.3);">Ready</span>
-          </div>
-
-          <div class="style-select-row" style="margin-top: 4px;">
-            <label for="select-show-preset">Show:</label>
+        <div class="routine-controls-row">
+          <div class="routine-picker-col">
+            <label for="select-show-preset">Routine Preset:</label>
             <select id="select-show-preset" class="select-input">
               <option value="/shows/jokes.json">🎃 3 Pumpkins Skeleton Joke Routine</option>
               <option value="/shows/demo.json">🎵 Spooky Organ Singing Show</option>
@@ -394,214 +757,34 @@
             </select>
           </div>
 
-          <div class="btn-group" style="align-items: center;">
-            <button id="btn-timeline-play" class="btn primary">▶ Play Show</button>
-            <button id="btn-timeline-stop" class="btn">⏹ Stop</button>
-            <label style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer; margin-left: 8px;">
+          <div class="btn-group routine-btn-group">
+            <button id="btn-timeline-play" class="btn primary small">▶ Play</button>
+            <button id="btn-timeline-stop" class="btn small">⏹ Stop</button>
+            <label class="routine-loop-label">
               <input type="checkbox" id="chk-timeline-loop" style="accent-color: var(--accent);">
-              Loop
+              <span>Loop</span>
             </label>
           </div>
-
-          <div class="slider-group">
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
-              <span>Timeline Progress</span>
-              <span id="val-timeline-time" style="font-family: monospace; color: #fff;">00:00 / 00:15</span>
-            </div>
-            <input type="range" id="slider-timeline-scrub" min="0" max="15" step="0.05" value="0" style="width: 100%;">
-          </div>
-
-          <!-- Live dialogue readout -->
-          <div class="subtitle-box">
-            <span class="subtitle-label">Live Spoken Dialogue / Cue:</span>
-            <div id="timeline-subtitle-text" class="subtitle-text">— Press Play —</div>
-          </div>
         </div>
 
-        <div class="file-loaders">
-          <h3>Custom Asset Loading</h3>
-          <div class="file-row">
-            <label class="btn file-btn">
-              Load SVG Face
-              <input type="file" id="file-svg" accept=".svg" hidden>
-            </label>
-            <span id="svg-name" class="file-name">Built-in Cartoon SVGs</span>
+        <!-- Scrubber -->
+        <div class="slider-group" style="margin-top: 8px;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">
+            <span>Timeline Progress</span>
+            <span id="val-timeline-time" style="font-family: monospace; color: #fff;">00:00 / 00:15</span>
           </div>
-          <div class="file-row">
-            <label class="btn file-btn">
-              Load Audio Song
-              <input type="file" id="file-audio" accept="audio/*" hidden>
-            </label>
-            <span id="audio-name" class="file-name">Procedural Synth</span>
-            <button id="btn-clear-audio" class="btn small" style="display: none; padding: 2px 6px;">✕</button>
-          </div>
-          <div class="file-row">
-            <label class="btn file-btn">
-              Load Timeline JSON
-              <input type="file" id="file-timeline" accept=".json" hidden>
-            </label>
-            <span id="timeline-name" class="file-name">jokes.json</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- Column 3B: Video Show: Layout & Multi-Pumpkin Crop (Video Mode) -->
-      <section id="card-video-crops" class="desk-card video-crop-section" style="display: none;">
-        <div class="section-header-row">
-          <h2>📐 Video Mapping & Crops</h2>
+          <input type="range" id="slider-timeline-scrub" min="0" max="15" step="0.05" value="0" style="width: 100%;">
         </div>
 
-        <div class="style-select-row">
-          <label for="select-video-layout">Layout Mode:</label>
-          <select id="select-video-layout" class="select-input">
-            <option value="tri-split">🎃 Tri-Pumpkin Split (Left, Center, Right Thirds)</option>
-            <option value="single">🎯 Single Video onto Focused Pumpkin</option>
-          </select>
-        </div>
-
-        <p style="font-size: 12px; color: var(--text-muted); margin: 6px 0 12px 0;">
-          In <strong>Tri-Pumpkin Split</strong>, your wide 16:9 video is divided into 3 segments. Each pumpkin slot can be independently positioned, scaled, and keystoned onto its real pumpkin!
-        </p>
-
-        <!-- Crop adjustments for each pumpkin -->
-        <div class="crop-adjust-box">
-          <h3 style="font-size: 13px; color: #fff; margin: 0 0 8px 0;">Horizontal & Vertical Crop Regions</h3>
-          
-          <!-- Left Pumpkin Crop -->
-          <div class="crop-slot-group">
-            <div class="crop-slot-header" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
-              <strong style="color: #60a5fa;">1. Left Pumpkin Crop</strong>
-              <span id="val-crop-left" style="font-family: monospace;">H: 0%–33% | V: 0%–100%</span>
-            </div>
-            <div class="slider-row-2col">
-              <div>
-                <label>Horizontal Start: <span id="val-crop-left-x">0%</span></label>
-                <input type="range" id="slider-crop-left-x" min="0" max="0.8" step="0.01" value="0">
-              </div>
-              <div>
-                <label>Horizontal Width: <span id="val-crop-left-w">33%</span></label>
-                <input type="range" id="slider-crop-left-w" min="0.1" max="1.0" step="0.01" value="0.33">
-              </div>
-            </div>
-            <div class="slider-row-2col" style="margin-top: 6px;">
-              <div>
-                <label>Vertical Start: <span id="val-crop-left-y">0%</span></label>
-                <input type="range" id="slider-crop-left-y" min="0" max="0.8" step="0.01" value="0">
-              </div>
-              <div>
-                <label>Vertical Height: <span id="val-crop-left-h">100%</span></label>
-                <input type="range" id="slider-crop-left-h" min="0.1" max="1.0" step="0.01" value="1.0">
-              </div>
-            </div>
-          </div>
-
-          <!-- Center Pumpkin Crop -->
-          <div class="crop-slot-group" style="margin-top: 10px;">
-            <div class="crop-slot-header" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
-              <strong style="color: #fbbf24;">2. Center Pumpkin Crop</strong>
-              <span id="val-crop-center" style="font-family: monospace;">H: 33%–67% | V: 0%–100%</span>
-            </div>
-            <div class="slider-row-2col">
-              <div>
-                <label>Horizontal Start: <span id="val-crop-center-x">33%</span></label>
-                <input type="range" id="slider-crop-center-x" min="0" max="0.8" step="0.01" value="0.33">
-              </div>
-              <div>
-                <label>Horizontal Width: <span id="val-crop-center-w">34%</span></label>
-                <input type="range" id="slider-crop-center-w" min="0.1" max="1.0" step="0.01" value="0.34">
-              </div>
-            </div>
-            <div class="slider-row-2col" style="margin-top: 6px;">
-              <div>
-                <label>Vertical Start: <span id="val-crop-center-y">0%</span></label>
-                <input type="range" id="slider-crop-center-y" min="0" max="0.8" step="0.01" value="0">
-              </div>
-              <div>
-                <label>Vertical Height: <span id="val-crop-center-h">100%</span></label>
-                <input type="range" id="slider-crop-center-h" min="0.1" max="1.0" step="0.01" value="1.0">
-              </div>
-            </div>
-          </div>
-
-          <!-- Right Pumpkin Crop -->
-          <div class="crop-slot-group" style="margin-top: 10px;">
-            <div class="crop-slot-header" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
-              <strong style="color: #f87171;">3. Right Pumpkin Crop</strong>
-              <span id="val-crop-right" style="font-family: monospace;">H: 67%–100% | V: 0%–100%</span>
-            </div>
-            <div class="slider-row-2col">
-              <div>
-                <label>Horizontal Start: <span id="val-crop-right-x">67%</span></label>
-                <input type="range" id="slider-crop-right-x" min="0" max="0.9" step="0.01" value="0.67">
-              </div>
-              <div>
-                <label>Horizontal Width: <span id="val-crop-right-w">33%</span></label>
-                <input type="range" id="slider-crop-right-w" min="0.1" max="1.0" step="0.01" value="0.33">
-              </div>
-            </div>
-            <div class="slider-row-2col" style="margin-top: 6px;">
-              <div>
-                <label>Vertical Start: <span id="val-crop-right-y">0%</span></label>
-                <input type="range" id="slider-crop-right-y" min="0" max="0.8" step="0.01" value="0">
-              </div>
-              <div>
-                <label>Vertical Height: <span id="val-crop-right-h">100%</span></label>
-                <input type="range" id="slider-crop-right-h" min="0.1" max="1.0" step="0.01" value="1.0">
-              </div>
-            </div>
-          </div>
-
-          <div style="margin-top: 12px;">
-            <button id="btn-reset-crops" class="btn small" style="width: 100%;">Reset Default 3-Way Thirds</button>
-          </div>
-        </div>
-
-        <!-- Pro Projection Tip -->
-        <div class="video-tips-box" style="margin-top: 14px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-          <h4 style="margin: 0 0 6px 0; color: #fff; font-size: 13px;">💡 Pro Projection Mapping Tip</h4>
-          <p style="margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.4;">
-            Press <strong>M (Mapping Wireframe)</strong> to see the 4-corner perspective quads projected onto your physical pumpkins. Drag the corners in the center column until the video faces map perfectly onto your pumpkins!
-          </p>
+        <!-- Dialogue Subtitle Readout -->
+        <div class="subtitle-box" style="margin-top: 6px;">
+          <span class="subtitle-label">Live Spoken Dialogue / Cue:</span>
+          <div id="timeline-subtitle-text" class="subtitle-text">— Press Play —</div>
         </div>
       </section>
     </div>
-
-    <!-- Bottom Keyboard Shortcut Reference -->
-    <footer class="desk-card key-reference">
-      <h2>Keyboard Shortcuts (Active on Both Desk &amp; Stage)</h2>
-      <div class="key-table">
-        <div><code>1</code> <code>2</code> <code>3</code> Focus Left/Center/Right</div>
-        <div><code>M</code> Toggle Mapping Mode (Wireframe)</div>
-        <div><code>Tab</code> Cycle Keystone Corner Edit</div>
-        <div><code>7</code> <code>8</code> <code>9</code> <code>0</code> Select Corner (TL/TR/BL/BR)</div>
-        <div><code>Arrows</code> Nudge Active Corner</div>
-        <div><code>Shift+Arrows</code> Nudge Entire Puppet (8px)</div>
-        <div><code>Alt+[</code> <code>Alt+]</code> Scale Uniform</div>
-        <div><code>Alt+Shift+[</code> <code>]</code> Scale Height Only</div>
-        <div><code>,</code> <code>.</code> Rotate Puppet</div>
-        <div><code>X</code> Reset Keystone</div>
-        <div><code>R</code> Reset Puppet Transform</div>
-        <div><code>A</code> Talk On/Off</div>
-        <div><code>F</code> Flame Mouth Toggle</div>
-        <div><code>Shift+F</code> Eye + Mouth Flames (Hold)</div>
-        <div><code>I</code> Freeze / Thaw</div>
-        <div><code>S</code> Smoke Breath</div>
-        <div><code>Shift+S</code> Scream</div>
-        <div><code>L</code> Lightning Eyes</div>
-        <div><code>G</code> Soul Wisp</div>
-        <div><code>Z</code> Sleep Toggle</div>
-        <div><code>W</code> Wink</div>
-        <div><code>←</code> <code>→</code> <code>↓</code> Look Left / Right / Center</div>
-        <div><code>C</code> Call and Response</div>
-        <div><code>Enter</code> Song Play / Stop</div>
-        <div><code>B</code> / <code>Esc</code> Panic Blackout</div>
-        <div><code>[</code> <code>]</code> Noise Gate Down / Up</div>
-        <div><code>-</code> <code>=</code> Cast Delay - / + (50ms)</div>
-        <div><code>H</code> Calibration Grid</div>
-        <div><code>K</code> Black-Level Test Card</div>
-      </div>
-    </footer>
   </div>
+
   <script type="module" src="/src/desk/main.ts"></script>
 </body>
 </html>
