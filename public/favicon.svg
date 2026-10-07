@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff578"/>
+      <stop offset="60%" stop-color="#ff7518"/>
+      <stop offset="100%" stop-color="#d12400"/>
+    </radialGradient>
+    <linearGradient id="rind" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff8c3a"/>
+      <stop offset="100%" stop-color="#c43e00"/>
+    </linearGradient>
+  </defs>
+  <!-- Stem -->
+  <path d="M30 6 C32 3, 37 4, 39 8 C37 10, 35 12, 33 16 C31 15, 30 11, 30 6 Z" fill="#2d8a4e" stroke="#1b5e34" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Pumpkin Outer Rind -->
+  <path d="M32 14 C20 14, 8 22, 8 36 C8 50, 19 58, 32 58 C45 58, 56 50, 56 36 C56 22, 44 14, 32 14 Z" fill="url(#rind)" stroke="#882000" stroke-width="2"/>
+  <!-- Pumpkin Rib Lines -->
+  <path d="M22 17 C16 23, 14 36, 17 49 C19 53, 22 56, 25 57" fill="none" stroke="#9e2900" stroke-width="1.5" opacity="0.6"/>
+  <path d="M42 17 C48 23, 50 36, 47 49 C45 53, 42 56, 39 57" fill="none" stroke="#9e2900" stroke-width="1.5" opacity="0.6"/>
+  <path d="M32 15 C30 25, 30 45, 32 58" fill="none" stroke="#9e2900" stroke-width="1.5" opacity="0.4"/>
+  <!-- Carved Eyes -->
+  <polygon points="20,28 26,35 16,35" fill="url(#glow)" stroke="#661000" stroke-width="1" stroke-linejoin="round"/>
+  <polygon points="44,28 48,35 38,35" fill="url(#glow)" stroke="#661000" stroke-width="1" stroke-linejoin="round"/>
+  <!-- Carved Nose -->
+  <polygon points="32,36 35,41 29,41" fill="url(#glow)" stroke="#661000" stroke-width="1" stroke-linejoin="round"/>
+  <!-- Carved Toothy Mouth -->
+  <path d="M16 43 Q32 56 48 43 Q44 48 41 46 L40 50 L37 47 L34 51 L30 47 L27 51 L24 47 L23 50 Q20 48 16 43 Z" fill="url(#glow)" stroke="#661000" stroke-width="1.2" stroke-linejoin="round"/>
+</svg>
