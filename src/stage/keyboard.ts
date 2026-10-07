@@ -31,6 +31,7 @@ export interface KeyboardCallbacks {
   onScaleYChange: (delta: number) => void;
   onRotateChange: (delta: number) => void;
   isCornerActive: () => boolean;
+  isMappingActive?: () => boolean;
 }
 
 export class StageKeyboard {
@@ -109,6 +110,31 @@ export class StageKeyboard {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         this.cb.onNudgeCorner(0, step);
+        return;
+      }
+    }
+
+    // In mapping mode without an active corner: arrows nudge the focused puppet
+    if (this.cb.isMappingActive?.()) {
+      const step = e.shiftKey ? 16 : 4;
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        this.cb.onNudge(-step, 0);
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        this.cb.onNudge(step, 0);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        this.cb.onNudge(0, -step);
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        this.cb.onNudge(0, step);
         return;
       }
     }
@@ -223,6 +249,7 @@ export class StageKeyboard {
         this.cb.onResetKeystone();
         break;
       case 'A':
+      case ' ': // Space bar also arms/toggles mic
         e.preventDefault();
         this.cb.onTalkToggle();
         break;

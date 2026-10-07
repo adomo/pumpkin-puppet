@@ -6,7 +6,9 @@ export class MicEngine {
   private analyser: AnalyserNode | null = null;
   private stream: MediaStream | null = null;
   private timeData: Float32Array<ArrayBuffer> | null = null;
-  private monitorGain: GainNode | null = null;
+  private cleanGainNode: GainNode | null = null;
+  private dspGainNode: GainNode | null = null;
+  private masterGainNode: GainNode | null = null;
   public voiceTransformer: VoiceTransformer | null = null;
   public voiceConfig: VoiceConfig = { ...DEFAULT_VOICE_CONFIG };
 
@@ -15,6 +17,11 @@ export class MicEngine {
   public smoothness: number = 0.25;
   public gain: number = 4.5; // Multiplier to comfortably open jaw
   public monitorEnabled: boolean = false;
+
+  // Direct Voice Transmission & Master Volume Controls
+  public transmissionEnabled: boolean = false; // Voice to speakers toggle
+  public isCleanPassthrough: boolean = true;   // True = Direct Mic (Clean / No Change), False = Halloween DSP
+  public masterVolume: number = 1.0;          // 0.0 to 2.0 (100% default)
 
   public rawRms: number = 0;
   public smoothedLevel: number = 0;
@@ -58,14 +65,26 @@ export class MicEngine {
 
         source.connect(this.analyser);
 
-        // Speaker monitor passthrough with Halloween Voice Transformer DSP
-        this.voiceTransformer = new VoiceTransformer(this.audioCtx, this.voiceConfig);
-        source.connect(this.voiceTransformer.inputNode);
+        // Master Output Stage
+        this.masterGainNode = this.audioCtx.createGain();
+        this.masterGainNode.gain.value = (this.transmissionEnabled || this.monitorEnabled) ? this.masterVolume : 0;
+        this.masterGainNode.connect(this.audioCtx.destination);
 
-        this.monitorGain = this.audioCtx.createGain();
-        this.monitorGain.gain.value = this.monitorEnabled ? 0.95 : 0;
-        this.voiceTransformer.outputNode.connect(this.monitorGain);
-        this.monitorGain.connect(this.audioCtx.destination);
+        // Path A: Direct Clean Mic Passthrough (Zero DSP, Zero Distortion, No Change)
+        this.cleanGainNode = this.audioCtx.createGain();
+        this.cleanGainNode.gain.value = this.isCleanPassthrough ? 1.0 : 0.0;
+        source.connect(this.cleanGainNode);
+        this.cleanGainNode.connect(this.masterGainNode);
+
+        // Path B: Halloween Voice Transformer DSP
+        this.voiceTransformer = new VoiceTransformer(this.audioCtx, this.voiceConfig);
+        this.dspGainNode = this.audioCtx.createGain();
+        this.dspGainNode.gain.value = this.isCleanPassthrough ? 0.0 : 1.0;
+        source.connect(this.voiceTransformer.inputNode);
+        this.voiceTransformer.outputNode.connect(this.dspGainNode);
+        this.dspGainNode.connect(this.masterGainNode);
+
+        this.updateRouting();
       }
 
       this.isArmed = true;
@@ -92,8 +111,46 @@ export class MicEngine {
 
   public setMonitor(enabled: boolean): void {
     this.monitorEnabled = enabled;
-    if (this.monitorGain && this.audioCtx) {
-      this.monitorGain.gain.setTargetAtTime(enabled ? 0.9 : 0, this.audioCtx.currentTime, 0.05);
+    this.transmissionEnabled = enabled;
+    this.updateRouting();
+  }
+
+  public setTransmission(enabled: boolean): void {
+    this.transmissionEnabled = enabled;
+    this.monitorEnabled = enabled;
+    this.updateRouting();
+  }
+
+  public setCleanPassthrough(clean: boolean): void {
+    this.isCleanPassthrough = clean;
+    this.updateRouting();
+  }
+
+  public setMasterVolume(vol: number): void {
+    this.masterVolume = Math.max(0, Math.min(2.5, vol));
+    this.updateRouting();
+  }
+
+  private updateRouting(): void {
+    if (!this.audioCtx) return;
+    if (this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume().catch(() => {});
+    }
+
+    const now = this.audioCtx.currentTime;
+    const targetMaster = (this.transmissionEnabled || this.monitorEnabled) ? this.masterVolume : 0;
+    if (this.masterGainNode) {
+      this.masterGainNode.gain.setTargetAtTime(targetMaster, now, 0.02);
+    }
+
+    if (this.cleanGainNode && this.dspGainNode) {
+      if (this.isCleanPassthrough) {
+        this.cleanGainNode.gain.setTargetAtTime(1.0, now, 0.02);
+        this.dspGainNode.gain.setTargetAtTime(0.0, now, 0.02);
+      } else {
+        this.cleanGainNode.gain.setTargetAtTime(0.0, now, 0.02);
+        this.dspGainNode.gain.setTargetAtTime(1.0, now, 0.02);
+      }
     }
   }
 
@@ -110,6 +167,9 @@ export class MicEngine {
       this.audioCtx = null;
     }
     this.voiceTransformer = null;
+    this.cleanGainNode = null;
+    this.dspGainNode = null;
+    this.masterGainNode = null;
     if (this.meterInterval) {
       clearInterval(this.meterInterval);
       this.meterInterval = null;

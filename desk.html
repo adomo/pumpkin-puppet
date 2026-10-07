@@ -53,11 +53,26 @@
           <span id="mic-status" class="status-text">Mic Disarmed</span>
         </div>
 
-        <div class="control-row" style="margin-top: -6px;">
-          <label style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; cursor: pointer;">
-            <input type="checkbox" id="chk-monitor" style="accent-color: var(--accent);">
-            Hear Voice in Speakers (Monitor Passthrough)
-          </label>
+        <!-- Voice Transmission & Clean Passthrough Test Controls -->
+        <div class="voice-transmit-box" style="margin: 8px 0 12px 0; padding: 12px; background: rgba(255,117,24,0.06); border: 1px solid rgba(255,117,24,0.25); border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong style="color: #fff; font-size: 13px;">🎙️ Speaker Voice Transmission</strong>
+            <span id="badge-voice-transmit" class="status-badge" style="background: rgba(156,163,175,0.15); color: #9ca3af; border-color: rgba(156,163,175,0.3);">Muted</span>
+          </div>
+
+          <div class="btn-group" style="margin-bottom: 10px;">
+            <button id="btn-toggle-voice-transmit" class="btn small" style="flex: 1;">🔇 Send Voice to Speakers</button>
+            <button id="btn-voice-clean-toggle" class="btn small active" style="flex: 1;" title="Toggle between direct clean mic and Halloween DSP">🎙️ Clean Passthrough</button>
+          </div>
+
+          <div class="slider-group" style="margin-bottom: 0;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 2px;">
+              <span>Master Voice Volume</span>
+              <span id="val-master-voice-vol" style="font-family: monospace; color: #fff;">100%</span>
+            </div>
+            <input type="range" id="slider-master-voice-vol" min="0" max="2.0" step="0.05" value="1.0" style="width: 100%;">
+          </div>
+          <input type="checkbox" id="chk-monitor" hidden>
         </div>
 
         <div class="meter-container">
@@ -253,20 +268,20 @@
         <!-- Position & Dimensions -->
         <div class="slider-subgroup">
           <div class="slider-row">
-            <label>Position X: <span id="val-pos-x">0px</span></label>
+            <label>Horizontal Position: <span id="val-pos-x">0px</span></label>
             <input type="range" id="slider-pos-x" min="-1200" max="1200" step="2" value="0">
           </div>
           <div class="slider-row">
-            <label>Position Y: <span id="val-pos-y">0px</span></label>
+            <label>Vertical Position: <span id="val-pos-y">0px</span></label>
             <input type="range" id="slider-pos-y" min="-800" max="800" step="2" value="0">
           </div>
           <div class="slider-row-2col">
             <div>
-              <label>Scale X: <span id="val-scale-x">1.00</span></label>
+              <label>Horizontal Scale: <span id="val-scale-x">1.00</span></label>
               <input type="range" id="slider-scale-x" min="0.2" max="3.0" step="0.02" value="1.0">
             </div>
             <div>
-              <label>Scale Y: <span id="val-scale-y">1.00</span></label>
+              <label>Vertical Scale: <span id="val-scale-y">1.00</span></label>
               <input type="range" id="slider-scale-y" min="0.2" max="3.0" step="0.02" value="1.0">
             </div>
           </div>
@@ -289,11 +304,11 @@
             <!-- Quick Keystone Sliders -->
             <div class="quick-keystone-col">
               <div class="slider-group">
-                <label>Vertical Keystone (Taper V)</label>
+                <label>Vertical Keystone (Taper Vert)</label>
                 <input type="range" id="slider-keystone-v" min="-120" max="120" step="2" value="0">
               </div>
               <div class="slider-group">
-                <label>Horizontal Keystone (Taper H)</label>
+                <label>Horizontal Keystone (Taper Horiz)</label>
                 <input type="range" id="slider-keystone-h" min="-120" max="120" step="2" value="0">
               </div>
               <div class="btn-group">
@@ -307,23 +322,23 @@
           <div class="corner-inputs-grid">
             <div class="corner-cell">
               <strong>Top-Left (7)</strong>
-              <span>X: <input type="number" id="inp-tl-x" class="num-inp" value="0"></span>
-              <span>Y: <input type="number" id="inp-tl-y" class="num-inp" value="0"></span>
+              <span>Horiz: <input type="number" id="inp-tl-x" class="num-inp" value="0"></span>
+              <span>Vert: <input type="number" id="inp-tl-y" class="num-inp" value="0"></span>
             </div>
             <div class="corner-cell">
               <strong>Top-Right (8)</strong>
-              <span>X: <input type="number" id="inp-tr-x" class="num-inp" value="0"></span>
-              <span>Y: <input type="number" id="inp-tr-y" class="num-inp" value="0"></span>
+              <span>Horiz: <input type="number" id="inp-tr-x" class="num-inp" value="0"></span>
+              <span>Vert: <input type="number" id="inp-tr-y" class="num-inp" value="0"></span>
             </div>
             <div class="corner-cell">
               <strong>Bottom-Left (9)</strong>
-              <span>X: <input type="number" id="inp-bl-x" class="num-inp" value="0"></span>
-              <span>Y: <input type="number" id="inp-bl-y" class="num-inp" value="0"></span>
+              <span>Horiz: <input type="number" id="inp-bl-x" class="num-inp" value="0"></span>
+              <span>Vert: <input type="number" id="inp-bl-y" class="num-inp" value="0"></span>
             </div>
             <div class="corner-cell">
               <strong>Bottom-Right (0)</strong>
-              <span>X: <input type="number" id="inp-br-x" class="num-inp" value="0"></span>
-              <span>Y: <input type="number" id="inp-br-y" class="num-inp" value="0"></span>
+              <span>Horiz: <input type="number" id="inp-br-x" class="num-inp" value="0"></span>
+              <span>Vert: <input type="number" id="inp-br-y" class="num-inp" value="0"></span>
             </div>
           </div>
         </div>
@@ -438,22 +453,32 @@
 
         <!-- Crop adjustments for each pumpkin -->
         <div class="crop-adjust-box">
-          <h3 style="font-size: 13px; color: #fff; margin: 0 0 8px 0;">Horizontal Crop Regions (0% to 100%)</h3>
+          <h3 style="font-size: 13px; color: #fff; margin: 0 0 8px 0;">Horizontal & Vertical Crop Regions</h3>
           
           <!-- Left Pumpkin Crop -->
           <div class="crop-slot-group">
             <div class="crop-slot-header" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
               <strong style="color: #60a5fa;">1. Left Pumpkin Crop</strong>
-              <span id="val-crop-left" style="font-family: monospace;">0% – 33%</span>
+              <span id="val-crop-left" style="font-family: monospace;">H: 0%–33% | V: 0%–100%</span>
             </div>
             <div class="slider-row-2col">
               <div>
-                <label>X Start: <span id="val-crop-left-x">0%</span></label>
-                <input type="range" id="slider-crop-left-x" min="0" max="0.6" step="0.01" value="0">
+                <label>Horizontal Start: <span id="val-crop-left-x">0%</span></label>
+                <input type="range" id="slider-crop-left-x" min="0" max="0.8" step="0.01" value="0">
               </div>
               <div>
-                <label>Width: <span id="val-crop-left-w">33%</span></label>
-                <input type="range" id="slider-crop-left-w" min="0.1" max="0.5" step="0.01" value="0.33">
+                <label>Horizontal Width: <span id="val-crop-left-w">33%</span></label>
+                <input type="range" id="slider-crop-left-w" min="0.1" max="1.0" step="0.01" value="0.33">
+              </div>
+            </div>
+            <div class="slider-row-2col" style="margin-top: 6px;">
+              <div>
+                <label>Vertical Start: <span id="val-crop-left-y">0%</span></label>
+                <input type="range" id="slider-crop-left-y" min="0" max="0.8" step="0.01" value="0">
+              </div>
+              <div>
+                <label>Vertical Height: <span id="val-crop-left-h">100%</span></label>
+                <input type="range" id="slider-crop-left-h" min="0.1" max="1.0" step="0.01" value="1.0">
               </div>
             </div>
           </div>
@@ -462,16 +487,26 @@
           <div class="crop-slot-group" style="margin-top: 10px;">
             <div class="crop-slot-header" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
               <strong style="color: #fbbf24;">2. Center Pumpkin Crop</strong>
-              <span id="val-crop-center" style="font-family: monospace;">33% – 67%</span>
+              <span id="val-crop-center" style="font-family: monospace;">H: 33%–67% | V: 0%–100%</span>
             </div>
             <div class="slider-row-2col">
               <div>
-                <label>X Start: <span id="val-crop-center-x">33%</span></label>
-                <input type="range" id="slider-crop-center-x" min="0.1" max="0.7" step="0.01" value="0.33">
+                <label>Horizontal Start: <span id="val-crop-center-x">33%</span></label>
+                <input type="range" id="slider-crop-center-x" min="0" max="0.8" step="0.01" value="0.33">
               </div>
               <div>
-                <label>Width: <span id="val-crop-center-w">34%</span></label>
-                <input type="range" id="slider-crop-center-w" min="0.1" max="0.5" step="0.01" value="0.34">
+                <label>Horizontal Width: <span id="val-crop-center-w">34%</span></label>
+                <input type="range" id="slider-crop-center-w" min="0.1" max="1.0" step="0.01" value="0.34">
+              </div>
+            </div>
+            <div class="slider-row-2col" style="margin-top: 6px;">
+              <div>
+                <label>Vertical Start: <span id="val-crop-center-y">0%</span></label>
+                <input type="range" id="slider-crop-center-y" min="0" max="0.8" step="0.01" value="0">
+              </div>
+              <div>
+                <label>Vertical Height: <span id="val-crop-center-h">100%</span></label>
+                <input type="range" id="slider-crop-center-h" min="0.1" max="1.0" step="0.01" value="1.0">
               </div>
             </div>
           </div>
@@ -480,16 +515,26 @@
           <div class="crop-slot-group" style="margin-top: 10px;">
             <div class="crop-slot-header" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
               <strong style="color: #f87171;">3. Right Pumpkin Crop</strong>
-              <span id="val-crop-right" style="font-family: monospace;">67% – 100%</span>
+              <span id="val-crop-right" style="font-family: monospace;">H: 67%–100% | V: 0%–100%</span>
             </div>
             <div class="slider-row-2col">
               <div>
-                <label>X Start: <span id="val-crop-right-x">67%</span></label>
-                <input type="range" id="slider-crop-right-x" min="0.4" max="0.9" step="0.01" value="0.67">
+                <label>Horizontal Start: <span id="val-crop-right-x">67%</span></label>
+                <input type="range" id="slider-crop-right-x" min="0" max="0.9" step="0.01" value="0.67">
               </div>
               <div>
-                <label>Width: <span id="val-crop-right-w">33%</span></label>
-                <input type="range" id="slider-crop-right-w" min="0.1" max="0.5" step="0.01" value="0.33">
+                <label>Horizontal Width: <span id="val-crop-right-w">33%</span></label>
+                <input type="range" id="slider-crop-right-w" min="0.1" max="1.0" step="0.01" value="0.33">
+              </div>
+            </div>
+            <div class="slider-row-2col" style="margin-top: 6px;">
+              <div>
+                <label>Vertical Start: <span id="val-crop-right-y">0%</span></label>
+                <input type="range" id="slider-crop-right-y" min="0" max="0.8" step="0.01" value="0">
+              </div>
+              <div>
+                <label>Vertical Height: <span id="val-crop-right-h">100%</span></label>
+                <input type="range" id="slider-crop-right-h" min="0.1" max="1.0" step="0.01" value="1.0">
               </div>
             </div>
           </div>
@@ -511,7 +556,7 @@
 
     <!-- Bottom Keyboard Shortcut Reference -->
     <footer class="desk-card key-reference">
-      <h2>Stage Keyboard Shortcuts (When `/stage` has focus)</h2>
+      <h2>Keyboard Shortcuts (Active on Both Desk &amp; Stage)</h2>
       <div class="key-table">
         <div><code>1</code> <code>2</code> <code>3</code> Focus Left/Center/Right</div>
         <div><code>M</code> Toggle Mapping Mode (Wireframe)</div>

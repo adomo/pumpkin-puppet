@@ -67,18 +67,32 @@ class DeskApp {
   private selectVideoLayout!: HTMLSelectElement;
   private sliderCropLeftX!: HTMLInputElement;
   private sliderCropLeftW!: HTMLInputElement;
+  private sliderCropLeftY!: HTMLInputElement;
+  private sliderCropLeftH!: HTMLInputElement;
   private valCropLeftX!: HTMLElement;
   private valCropLeftW!: HTMLElement;
+  private valCropLeftY!: HTMLElement;
+  private valCropLeftH!: HTMLElement;
   private valCropLeft!: HTMLElement;
+
   private sliderCropCenterX!: HTMLInputElement;
   private sliderCropCenterW!: HTMLInputElement;
+  private sliderCropCenterY!: HTMLInputElement;
+  private sliderCropCenterH!: HTMLInputElement;
   private valCropCenterX!: HTMLElement;
   private valCropCenterW!: HTMLElement;
+  private valCropCenterY!: HTMLElement;
+  private valCropCenterH!: HTMLElement;
   private valCropCenter!: HTMLElement;
+
   private sliderCropRightX!: HTMLInputElement;
   private sliderCropRightW!: HTMLInputElement;
+  private sliderCropRightY!: HTMLInputElement;
+  private sliderCropRightH!: HTMLInputElement;
   private valCropRightX!: HTMLElement;
   private valCropRightW!: HTMLElement;
+  private valCropRightY!: HTMLElement;
+  private valCropRightH!: HTMLElement;
   private valCropRight!: HTMLElement;
   private btnResetCrops!: HTMLButtonElement;
 
@@ -100,6 +114,11 @@ class DeskApp {
   private micStatusEl!: HTMLElement;
   private btnArmMic!: HTMLButtonElement;
   private chkMonitor!: HTMLInputElement;
+  private btnToggleVoiceTransmit!: HTMLButtonElement;
+  private btnVoiceCleanToggle!: HTMLButtonElement;
+  private badgeVoiceTransmit!: HTMLElement;
+  private sliderMasterVoiceVol!: HTMLInputElement;
+  private valMasterVoiceVol!: HTMLElement;
   private sliderGate!: HTMLInputElement;
   private valGateEl!: HTMLElement;
   private sliderSmooth!: HTMLInputElement;
@@ -151,6 +170,7 @@ class DeskApp {
   private keystoneCanvas!: HTMLCanvasElement;
   private keystoneCtx!: CanvasRenderingContext2D;
   private draggingCorner: CornerKey | null = null;
+  private activeCorner: 'none' | CornerKey = 'none';
 
   // Profiles
   private selectProfile!: HTMLSelectElement;
@@ -173,9 +193,11 @@ class DeskApp {
     this.initKeystonePad();
     this.populateProfiles();
     this.setupSyncBus();
+    this.setupKeyboard();
 
     this.setMode(this.showMode);
     this.updateVideoUI();
+    this.updateVoiceTransmitUI();
     this.refreshServerVideos();
 
     syncBus.send({ type: 'SYNC_STATE_REQ' });
@@ -199,6 +221,11 @@ class DeskApp {
     this.micStatusEl = document.getElementById('mic-status')!;
     this.btnArmMic = document.getElementById('btn-arm-mic') as HTMLButtonElement;
     this.chkMonitor = document.getElementById('chk-monitor') as HTMLInputElement;
+    this.btnToggleVoiceTransmit = document.getElementById('btn-toggle-voice-transmit') as HTMLButtonElement;
+    this.btnVoiceCleanToggle = document.getElementById('btn-voice-clean-toggle') as HTMLButtonElement;
+    this.badgeVoiceTransmit = document.getElementById('badge-voice-transmit') as HTMLElement;
+    this.sliderMasterVoiceVol = document.getElementById('slider-master-voice-vol') as HTMLInputElement;
+    this.valMasterVoiceVol = document.getElementById('val-master-voice-vol') as HTMLElement;
     this.sliderGate = document.getElementById('slider-gate') as HTMLInputElement;
     this.valGateEl = document.getElementById('val-gate')!;
     this.sliderSmooth = document.getElementById('slider-smooth') as HTMLInputElement;
@@ -302,20 +329,32 @@ class DeskApp {
     this.selectVideoLayout = document.getElementById('select-video-layout') as HTMLSelectElement;
     this.sliderCropLeftX = document.getElementById('slider-crop-left-x') as HTMLInputElement;
     this.sliderCropLeftW = document.getElementById('slider-crop-left-w') as HTMLInputElement;
+    this.sliderCropLeftY = document.getElementById('slider-crop-left-y') as HTMLInputElement;
+    this.sliderCropLeftH = document.getElementById('slider-crop-left-h') as HTMLInputElement;
     this.valCropLeftX = document.getElementById('val-crop-left-x')!;
     this.valCropLeftW = document.getElementById('val-crop-left-w')!;
+    this.valCropLeftY = document.getElementById('val-crop-left-y')!;
+    this.valCropLeftH = document.getElementById('val-crop-left-h')!;
     this.valCropLeft = document.getElementById('val-crop-left')!;
 
     this.sliderCropCenterX = document.getElementById('slider-crop-center-x') as HTMLInputElement;
     this.sliderCropCenterW = document.getElementById('slider-crop-center-w') as HTMLInputElement;
+    this.sliderCropCenterY = document.getElementById('slider-crop-center-y') as HTMLInputElement;
+    this.sliderCropCenterH = document.getElementById('slider-crop-center-h') as HTMLInputElement;
     this.valCropCenterX = document.getElementById('val-crop-center-x')!;
     this.valCropCenterW = document.getElementById('val-crop-center-w')!;
+    this.valCropCenterY = document.getElementById('val-crop-center-y')!;
+    this.valCropCenterH = document.getElementById('val-crop-center-h')!;
     this.valCropCenter = document.getElementById('val-crop-center')!;
 
     this.sliderCropRightX = document.getElementById('slider-crop-right-x') as HTMLInputElement;
     this.sliderCropRightW = document.getElementById('slider-crop-right-w') as HTMLInputElement;
+    this.sliderCropRightY = document.getElementById('slider-crop-right-y') as HTMLInputElement;
+    this.sliderCropRightH = document.getElementById('slider-crop-right-h') as HTMLInputElement;
     this.valCropRightX = document.getElementById('val-crop-right-x')!;
     this.valCropRightW = document.getElementById('val-crop-right-w')!;
+    this.valCropRightY = document.getElementById('val-crop-right-y')!;
+    this.valCropRightH = document.getElementById('val-crop-right-h')!;
     this.valCropRight = document.getElementById('val-crop-right')!;
 
     this.btnResetCrops = document.getElementById('btn-reset-crops') as HTMLButtonElement;
@@ -342,7 +381,39 @@ class DeskApp {
     // Monitor passthrough
     this.chkMonitor.addEventListener('change', () => {
       this.micEngine.setMonitor(this.chkMonitor.checked);
+      this.updateVoiceTransmitUI();
       syncBus.send({ type: 'SET_MONITOR', enabled: this.chkMonitor.checked });
+    });
+
+    // Speaker Voice Transmission Toggle
+    this.btnToggleVoiceTransmit.addEventListener('click', async () => {
+      const willEnable = !this.micEngine.transmissionEnabled;
+      if (willEnable && !this.micEngine.isArmed) {
+        await this.micEngine.arm();
+        this.updateMicStatus(this.micEngine.isArmed);
+      }
+      this.micEngine.setTransmission(willEnable);
+      this.chkMonitor.checked = willEnable;
+      this.updateVoiceTransmitUI();
+      syncBus.send({ type: 'SET_MONITOR', enabled: willEnable });
+    });
+
+    // Clean Passthrough Toggle (Clean vs Halloween DSP)
+    this.btnVoiceCleanToggle.addEventListener('click', async () => {
+      if (!this.micEngine.isArmed) {
+        await this.micEngine.arm();
+        this.updateMicStatus(this.micEngine.isArmed);
+      }
+      const willBeClean = !this.micEngine.isCleanPassthrough;
+      this.micEngine.setCleanPassthrough(willBeClean);
+      this.updateVoiceTransmitUI();
+    });
+
+    // Master Voice Volume Slider
+    this.sliderMasterVoiceVol.addEventListener('input', () => {
+      const val = parseFloat(this.sliderMasterVoiceVol.value);
+      this.valMasterVoiceVol.textContent = `${Math.round(val * 100)}%`;
+      this.micEngine.setMasterVolume(val);
     });
 
     // Voice DSP Controls
@@ -946,6 +1017,8 @@ class DeskApp {
       slot: PuppetSlot,
       slX: HTMLInputElement,
       slW: HTMLInputElement,
+      slY: HTMLInputElement,
+      slH: HTMLInputElement,
       onUpdate: () => void
     ) => {
       slX.addEventListener('input', () => {
@@ -961,11 +1034,46 @@ class DeskApp {
         onUpdate();
         syncBus.send({ type: 'VIDEO_SET_CROP', slot, crop: this.videoConfig.crops[slot] });
       });
+
+      slY.addEventListener('input', () => {
+        const y = parseFloat(slY.value);
+        this.videoConfig.crops[slot].y = y;
+        onUpdate();
+        syncBus.send({ type: 'VIDEO_SET_CROP', slot, crop: this.videoConfig.crops[slot] });
+      });
+
+      slH.addEventListener('input', () => {
+        const h = parseFloat(slH.value);
+        this.videoConfig.crops[slot].h = h;
+        onUpdate();
+        syncBus.send({ type: 'VIDEO_SET_CROP', slot, crop: this.videoConfig.crops[slot] });
+      });
     };
 
-    setupCropListeners('left', this.sliderCropLeftX, this.sliderCropLeftW, () => this.updateCropUI());
-    setupCropListeners('center', this.sliderCropCenterX, this.sliderCropCenterW, () => this.updateCropUI());
-    setupCropListeners('right', this.sliderCropRightX, this.sliderCropRightW, () => this.updateCropUI());
+    setupCropListeners(
+      'left',
+      this.sliderCropLeftX,
+      this.sliderCropLeftW,
+      this.sliderCropLeftY,
+      this.sliderCropLeftH,
+      () => this.updateCropUI()
+    );
+    setupCropListeners(
+      'center',
+      this.sliderCropCenterX,
+      this.sliderCropCenterW,
+      this.sliderCropCenterY,
+      this.sliderCropCenterH,
+      () => this.updateCropUI()
+    );
+    setupCropListeners(
+      'right',
+      this.sliderCropRightX,
+      this.sliderCropRightW,
+      this.sliderCropRightY,
+      this.sliderCropRightH,
+      () => this.updateCropUI()
+    );
 
     this.btnResetCrops.addEventListener('click', () => {
       this.videoConfig.crops = {
@@ -1074,23 +1182,38 @@ class DeskApp {
     if (!this.videoConfig?.crops) return;
     const { left, center, right } = this.videoConfig.crops;
 
+    // Left Crop (Horizontal & Vertical)
     this.sliderCropLeftX.value = left.x.toFixed(2);
     this.sliderCropLeftW.value = left.w.toFixed(2);
+    this.sliderCropLeftY.value = (left.y ?? 0).toFixed(2);
+    this.sliderCropLeftH.value = (left.h ?? 1).toFixed(2);
     this.valCropLeftX.textContent = `${Math.round(left.x * 100)}%`;
     this.valCropLeftW.textContent = `${Math.round(left.w * 100)}%`;
-    this.valCropLeft.textContent = `${Math.round(left.x * 100)}% – ${Math.round((left.x + left.w) * 100)}%`;
+    this.valCropLeftY.textContent = `${Math.round((left.y ?? 0) * 100)}%`;
+    this.valCropLeftH.textContent = `${Math.round((left.h ?? 1) * 100)}%`;
+    this.valCropLeft.textContent = `H: ${Math.round(left.x * 100)}%–${Math.round((left.x + left.w) * 100)}% | V: ${Math.round((left.y ?? 0) * 100)}%–${Math.round(((left.y ?? 0) + (left.h ?? 1)) * 100)}%`;
 
+    // Center Crop (Horizontal & Vertical)
     this.sliderCropCenterX.value = center.x.toFixed(2);
     this.sliderCropCenterW.value = center.w.toFixed(2);
+    this.sliderCropCenterY.value = (center.y ?? 0).toFixed(2);
+    this.sliderCropCenterH.value = (center.h ?? 1).toFixed(2);
     this.valCropCenterX.textContent = `${Math.round(center.x * 100)}%`;
     this.valCropCenterW.textContent = `${Math.round(center.w * 100)}%`;
-    this.valCropCenter.textContent = `${Math.round(center.x * 100)}% – ${Math.round((center.x + center.w) * 100)}%`;
+    this.valCropCenterY.textContent = `${Math.round((center.y ?? 0) * 100)}%`;
+    this.valCropCenterH.textContent = `${Math.round((center.h ?? 1) * 100)}%`;
+    this.valCropCenter.textContent = `H: ${Math.round(center.x * 100)}%–${Math.round((center.x + center.w) * 100)}% | V: ${Math.round((center.y ?? 0) * 100)}%–${Math.round(((center.y ?? 0) + (center.h ?? 1)) * 100)}%`;
 
+    // Right Crop (Horizontal & Vertical)
     this.sliderCropRightX.value = right.x.toFixed(2);
     this.sliderCropRightW.value = right.w.toFixed(2);
+    this.sliderCropRightY.value = (right.y ?? 0).toFixed(2);
+    this.sliderCropRightH.value = (right.h ?? 1).toFixed(2);
     this.valCropRightX.textContent = `${Math.round(right.x * 100)}%`;
     this.valCropRightW.textContent = `${Math.round(right.w * 100)}%`;
-    this.valCropRight.textContent = `${Math.round(right.x * 100)}% – ${Math.round((right.x + right.w) * 100)}%`;
+    this.valCropRightY.textContent = `${Math.round((right.y ?? 0) * 100)}%`;
+    this.valCropRightH.textContent = `${Math.round((right.h ?? 1) * 100)}%`;
+    this.valCropRight.textContent = `H: ${Math.round(right.x * 100)}%–${Math.round((right.x + right.w) * 100)}% | V: ${Math.round((right.y ?? 0) * 100)}%–${Math.round(((right.y ?? 0) + (right.h ?? 1)) * 100)}%`;
   }
 
   // --- Interactive 2D Keystone Pad Widget ---
@@ -1205,7 +1328,7 @@ class DeskApp {
     const keys: CornerKey[] = ['tl', 'tr', 'br', 'bl'];
     for (const key of keys) {
       const pt = corners[key];
-      const isDragging = this.draggingCorner === key;
+      const isDragging = this.draggingCorner === key || this.activeCorner === key;
 
       ctx.fillStyle = isDragging ? '#ff7518' : '#00e5ff';
       ctx.strokeStyle = '#ffffff';
@@ -1300,6 +1423,12 @@ class DeskApp {
       switch (msg.type) {
         case 'AUDIO_METER':
           this.handleAudioMeter(msg.rawRms, msg.smoothed, msg.isArmed);
+          break;
+
+        case 'SET_MONITOR':
+          this.chkMonitor.checked = msg.enabled;
+          this.micEngine.setMonitor(msg.enabled);
+          this.updateVoiceTransmitUI();
           break;
 
         case 'SET_FOCUS':
@@ -1430,6 +1559,372 @@ class DeskApp {
       this.meterLevelEl.style.width = '0%';
       this.meterValTextEl.textContent = '0%';
     }
+  }
+
+  private updateVoiceTransmitUI(): void {
+    const isTransmitting = this.micEngine.transmissionEnabled;
+    const isClean = this.micEngine.isCleanPassthrough;
+
+    if (isTransmitting) {
+      this.btnToggleVoiceTransmit.textContent = '🔊 Speaker Voice: ON';
+      this.btnToggleVoiceTransmit.classList.add('active');
+      this.badgeVoiceTransmit.textContent = isClean ? 'Clean Active' : 'DSP Active';
+      this.badgeVoiceTransmit.style.color = '#10b981';
+      this.badgeVoiceTransmit.style.background = 'rgba(16, 185, 129, 0.15)';
+      this.badgeVoiceTransmit.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+    } else {
+      this.btnToggleVoiceTransmit.textContent = '🔇 Send Voice to Speakers';
+      this.btnToggleVoiceTransmit.classList.remove('active');
+      this.badgeVoiceTransmit.textContent = 'Muted';
+      this.badgeVoiceTransmit.style.color = '#8e8e9a';
+      this.badgeVoiceTransmit.style.background = 'rgba(255, 255, 255, 0.05)';
+      this.badgeVoiceTransmit.style.borderColor = 'var(--border)';
+    }
+
+    if (isClean) {
+      this.btnVoiceCleanToggle.textContent = '🎙️ Clean Passthrough';
+      this.btnVoiceCleanToggle.classList.add('active');
+      this.btnVoiceCleanToggle.style.borderColor = '#10b981';
+    } else {
+      this.btnVoiceCleanToggle.textContent = '🎃 Halloween DSP';
+      this.btnVoiceCleanToggle.classList.remove('active');
+      this.btnVoiceCleanToggle.style.borderColor = 'var(--border)';
+    }
+  }
+
+  private setupKeyboard(): void {
+    window.addEventListener('keydown', async (e: KeyboardEvent) => {
+      const active = document.activeElement;
+      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
+        return;
+      }
+
+      // Tab: cycle keystone edit corner (none -> tl -> tr -> bl -> br -> none)
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const cycle: Array<'none' | CornerKey> = ['none', 'tl', 'tr', 'bl', 'br'];
+        const curIdx = cycle.indexOf(this.activeCorner);
+        this.activeCorner = cycle[(curIdx + 1) % cycle.length];
+        this.drawKeystonePad();
+        return;
+      }
+
+      // Direct Corner Selection: 7=TL, 8=TR, 9=BL, 0=BR
+      if (e.key === '7') {
+        e.preventDefault();
+        this.activeCorner = this.activeCorner === 'tl' ? 'none' : 'tl';
+        this.drawKeystonePad();
+        return;
+      }
+      if (e.key === '8') {
+        e.preventDefault();
+        this.activeCorner = this.activeCorner === 'tr' ? 'none' : 'tr';
+        this.drawKeystonePad();
+        return;
+      }
+      if (e.key === '9') {
+        e.preventDefault();
+        this.activeCorner = this.activeCorner === 'bl' ? 'none' : 'bl';
+        this.drawKeystonePad();
+        return;
+      }
+      if (e.key === '0') {
+        e.preventDefault();
+        this.activeCorner = this.activeCorner === 'br' ? 'none' : 'br';
+        this.drawKeystonePad();
+        return;
+      }
+
+      // 1, 2, 3: Focus Left, Center, Right
+      if (e.key === '1') {
+        e.preventDefault();
+        this.setFocus('left');
+        return;
+      }
+      if (e.key === '2') {
+        e.preventDefault();
+        this.setFocus('center');
+        return;
+      }
+      if (e.key === '3') {
+        e.preventDefault();
+        this.setFocus('right');
+        return;
+      }
+
+      // Arrow keys:
+      // If a corner is active, nudge that corner!
+      if (this.activeCorner !== 'none') {
+        const step = e.shiftKey ? 8 : 2;
+        const corner = this.activeCorner;
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          this.currentTransforms[this.currentFocus].corners[corner][0] -= step;
+          this.broadcastTransform();
+          this.updateCornerInputs();
+          this.drawKeystonePad();
+          return;
+        }
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          this.currentTransforms[this.currentFocus].corners[corner][0] += step;
+          this.broadcastTransform();
+          this.updateCornerInputs();
+          this.drawKeystonePad();
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          this.currentTransforms[this.currentFocus].corners[corner][1] -= step;
+          this.broadcastTransform();
+          this.updateCornerInputs();
+          this.drawKeystonePad();
+          return;
+        }
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          this.currentTransforms[this.currentFocus].corners[corner][1] += step;
+          this.broadcastTransform();
+          this.updateCornerInputs();
+          this.drawKeystonePad();
+          return;
+        }
+      }
+
+      // If no corner is active, nudge the entire pumpkin position
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const step = e.shiftKey ? 16 : 4;
+        this.currentTransforms[this.currentFocus].x -= step;
+        this.sliderPosX.value = this.currentTransforms[this.currentFocus].x.toString();
+        this.valPosXEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].x)}px`;
+        this.broadcastTransform();
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        const step = e.shiftKey ? 16 : 4;
+        this.currentTransforms[this.currentFocus].x += step;
+        this.sliderPosX.value = this.currentTransforms[this.currentFocus].x.toString();
+        this.valPosXEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].x)}px`;
+        this.broadcastTransform();
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const step = e.shiftKey ? 16 : 4;
+        this.currentTransforms[this.currentFocus].y -= step;
+        this.sliderPosY.value = this.currentTransforms[this.currentFocus].y.toString();
+        this.valPosYEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].y)}px`;
+        this.broadcastTransform();
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const step = e.shiftKey ? 16 : 4;
+        this.currentTransforms[this.currentFocus].y += step;
+        this.sliderPosY.value = this.currentTransforms[this.currentFocus].y.toString();
+        this.valPosYEl.textContent = `${Math.round(this.currentTransforms[this.currentFocus].y)}px`;
+        this.broadcastTransform();
+        return;
+      }
+
+      // Scale: Alt + [ or ]
+      if (e.altKey) {
+        if (e.key === '[' || e.code === 'BracketLeft') {
+          e.preventDefault();
+          const tf = this.currentTransforms[this.currentFocus];
+          if (e.shiftKey) {
+            tf.scaleY = Math.max(0.2, +(tf.scaleY - 0.05).toFixed(2));
+          } else {
+            tf.scaleX = Math.max(0.2, +(tf.scaleX - 0.05).toFixed(2));
+            tf.scaleY = Math.max(0.2, +(tf.scaleY - 0.05).toFixed(2));
+          }
+          this.sliderScaleX.value = tf.scaleX.toString();
+          this.sliderScaleY.value = tf.scaleY.toString();
+          this.valScaleXEl.textContent = tf.scaleX.toFixed(2);
+          this.valScaleYEl.textContent = tf.scaleY.toFixed(2);
+          this.broadcastTransform();
+          return;
+        }
+        if (e.key === ']' || e.code === 'BracketRight') {
+          e.preventDefault();
+          const tf = this.currentTransforms[this.currentFocus];
+          if (e.shiftKey) {
+            tf.scaleY = Math.min(3.0, +(tf.scaleY + 0.05).toFixed(2));
+          } else {
+            tf.scaleX = Math.min(3.0, +(tf.scaleX + 0.05).toFixed(2));
+            tf.scaleY = Math.min(3.0, +(tf.scaleY + 0.05).toFixed(2));
+          }
+          this.sliderScaleX.value = tf.scaleX.toString();
+          this.sliderScaleY.value = tf.scaleY.toString();
+          this.valScaleXEl.textContent = tf.scaleX.toFixed(2);
+          this.valScaleYEl.textContent = tf.scaleY.toFixed(2);
+          this.broadcastTransform();
+          return;
+        }
+      }
+
+      // Rotation: , and .
+      if (e.key === ',' || e.key === '<') {
+        e.preventDefault();
+        const tf = this.currentTransforms[this.currentFocus];
+        tf.rotation = (tf.rotation - 2) % 360;
+        this.sliderRot.value = tf.rotation.toString();
+        this.valRotEl.textContent = `${Math.round(tf.rotation)}°`;
+        this.broadcastTransform();
+        return;
+      }
+      if (e.key === '.' || e.key === '>') {
+        e.preventDefault();
+        const tf = this.currentTransforms[this.currentFocus];
+        tf.rotation = (tf.rotation + 2) % 360;
+        this.sliderRot.value = tf.rotation.toString();
+        this.valRotEl.textContent = `${Math.round(tf.rotation)}°`;
+        this.broadcastTransform();
+        return;
+      }
+
+      // Gate: [ and ] (without Alt)
+      if (!e.altKey && (e.key === '[' || e.code === 'BracketLeft')) {
+        e.preventDefault();
+        this.currentGate = Math.max(0, Math.min(0.08, +(this.currentGate - 0.005).toFixed(3)));
+        this.sliderGate.value = this.currentGate.toString();
+        this.valGateEl.textContent = this.currentGate.toFixed(3);
+        this.meterGateMarkerEl.style.left = `${Math.min(100, (this.currentGate / 0.08) * 100)}%`;
+        this.micEngine.setGate(this.currentGate);
+        syncBus.send({ type: 'SET_GATE', gate: this.currentGate });
+        return;
+      }
+      if (!e.altKey && (e.key === ']' || e.code === 'BracketRight')) {
+        e.preventDefault();
+        this.currentGate = Math.max(0, Math.min(0.08, +(this.currentGate + 0.005).toFixed(3)));
+        this.sliderGate.value = this.currentGate.toString();
+        this.valGateEl.textContent = this.currentGate.toFixed(3);
+        this.meterGateMarkerEl.style.left = `${Math.min(100, (this.currentGate / 0.08) * 100)}%`;
+        this.micEngine.setGate(this.currentGate);
+        syncBus.send({ type: 'SET_GATE', gate: this.currentGate });
+        return;
+      }
+
+      // Delay: - and =
+      if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        this.currentDelay = Math.max(0, Math.min(1500, this.currentDelay - 50));
+        this.sliderDelay.value = this.currentDelay.toString();
+        this.valDelayEl.textContent = `${this.currentDelay} ms`;
+        syncBus.send({ type: 'SET_DELAY', castDelayMs: this.currentDelay });
+        return;
+      }
+      if (e.key === '=' || e.key === '+') {
+        e.preventDefault();
+        this.currentDelay = Math.max(0, Math.min(1500, this.currentDelay + 50));
+        this.sliderDelay.value = this.currentDelay.toString();
+        this.valDelayEl.textContent = `${this.currentDelay} ms`;
+        syncBus.send({ type: 'SET_DELAY', castDelayMs: this.currentDelay });
+        return;
+      }
+
+      const key = e.key.toUpperCase();
+
+      // Shift + F: Eye flames
+      if (e.shiftKey && key === 'F') {
+        e.preventDefault();
+        syncBus.send({ type: 'TRIGGER_ACTION', action: 'eyeflame' });
+        return;
+      }
+
+      // Shift + S: Scream
+      if (e.shiftKey && key === 'S') {
+        e.preventDefault();
+        syncBus.send({ type: 'TRIGGER_ACTION', action: 'scream' });
+        return;
+      }
+
+      switch (key) {
+        case 'M':
+          e.preventDefault();
+          this.mappingModeActive = !this.mappingModeActive;
+          this.btnToggleMapping.classList.toggle('active', this.mappingModeActive);
+          syncBus.send({ type: 'TOGGLE_MAPPING_MODE', active: this.mappingModeActive });
+          break;
+        case 'X':
+          e.preventDefault();
+          this.currentTransforms[this.currentFocus].corners = JSON.parse(JSON.stringify(DEFAULT_CORNERS));
+          this.sliderKeystoneV.value = '0';
+          this.sliderKeystoneH.value = '0';
+          syncBus.send({ type: 'RESET_KEYSTONE', slot: this.currentFocus });
+          this.updateControlsFromState();
+          break;
+        case 'R':
+          e.preventDefault();
+          this.currentTransforms[this.currentFocus] = JSON.parse(JSON.stringify(DEFAULT_TRANSFORMS[this.currentFocus]));
+          syncBus.send({ type: 'RESET_TRANSFORM', slot: this.currentFocus });
+          this.updateControlsFromState();
+          break;
+        case 'B':
+        case 'ESCAPE':
+          e.preventDefault();
+          if (this.activeCorner !== 'none') {
+            this.activeCorner = 'none';
+            this.drawKeystonePad();
+          } else {
+            syncBus.send({ type: 'TOGGLE_DIAGNOSTIC', diag: 'blackout' });
+          }
+          break;
+        case 'H':
+          e.preventDefault();
+          syncBus.send({ type: 'TOGGLE_DIAGNOSTIC', diag: 'grid' });
+          break;
+        case 'K':
+          e.preventDefault();
+          syncBus.send({ type: 'TOGGLE_DIAGNOSTIC', diag: 'black-card' });
+          break;
+        case 'A':
+        case ' ': // Space bar
+          e.preventDefault();
+          await this.micEngine.toggle();
+          this.updateMicStatus(this.micEngine.isArmed);
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'talk' });
+          break;
+        case 'F':
+          e.preventDefault();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'flame' });
+          break;
+        case 'I':
+          e.preventDefault();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'freeze' });
+          break;
+        case 'S':
+          e.preventDefault();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'smoke' });
+          break;
+        case 'L':
+          e.preventDefault();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'lightning' });
+          break;
+        case 'G':
+          e.preventDefault();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'soul' });
+          break;
+        case 'Z':
+          e.preventDefault();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'sleep' });
+          break;
+        case 'W':
+          e.preventDefault();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'wink' });
+          break;
+        case 'C':
+          e.preventDefault();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'call-response' });
+          break;
+        case 'ENTER':
+          e.preventDefault();
+          syncBus.send({ type: 'TRIGGER_ACTION', action: 'song' });
+          break;
+      }
+    });
   }
 }
 

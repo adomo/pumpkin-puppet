@@ -200,6 +200,7 @@ class StageApp {
       onNudgeCorner: (dx, dy) => this.nudgeActiveCorner(dx, dy),
       onResetKeystone: () => this.resetKeystone(this.focusedSlot),
       isCornerActive: () => this.renderer.mappingModeVisible && this.activeCorner !== 'none',
+      isMappingActive: () => this.renderer.mappingModeVisible,
       onNudge: (dx, dy) => {
         const tf = this.puppets[this.focusedSlot].transform;
         tf.x += dx;
