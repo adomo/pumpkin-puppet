@@ -1185,46 +1185,101 @@ class DeskApp {
 
   private async handleVideoUpload(file: File): Promise<void> {
     const blobUrl = URL.createObjectURL(file);
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
     this.videoConfig.url = blobUrl;
     this.videoConfig.name = file.name;
-    this.videoCurrentTitle.textContent = file.name;
+    this.videoCurrentTitle.textContent = `${file.name} (${sizeMb} MB)`;
 
-    // Instantly notify stage for immediate local playback
+    // 1. Immediately inject the local file into the Video Library dropdown so it shows up instantly
+    let localOpt = this.selectServerVideos.querySelector(`option[data-blob-file="${file.name}"]`) as HTMLOptionElement;
+    if (!localOpt) {
+      localOpt = document.createElement('option');
+      localOpt.setAttribute('data-blob-file', file.name);
+      this.selectServerVideos.insertBefore(localOpt, this.selectServerVideos.firstChild);
+    }
+    localOpt.value = blobUrl;
+    localOpt.textContent = `📁 [Local File] ${file.name} (${sizeMb} MB)`;
+    this.selectServerVideos.value = blobUrl;
+
+    // 2. Instantly notify stage for immediate local playback
     syncBus.send({
       type: 'VIDEO_LOAD',
       config: { url: blobUrl, name: file.name, loop: this.videoConfig.loop }
     });
 
-    // Background upload to persist into public/videos/
+    // 3. Check if this file already exists on the server to skip redundant 300+ MB re-upload
+    try {
+      const checkRes = await fetch('/api/videos');
+      if (checkRes.ok) {
+        const existingList = (await checkRes.json()) as Array<{ name: string; url: string; size: number }>;
+        const cleanTarget = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const match = existingList.find((v) => v.name === file.name || v.name === cleanTarget);
+        if (match) {
+          // File already exists on server: upgrade dropdown item to server URL seamlessly
+          localOpt.value = match.url;
+          localOpt.textContent = `🎃 ${match.name} (${(match.size / (1024 * 1024)).toFixed(1)} MB)`;
+          this.videoConfig.url = match.url;
+          this.selectServerVideos.value = match.url;
+          syncBus.send({
+            type: 'VIDEO_LOAD',
+            config: { url: match.url, name: match.name, loop: this.videoConfig.loop }
+          });
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not check existing videos:', e);
+    }
+
+    // 4. Background upload with true progress tracking via XMLHttpRequest
     try {
       this.videoUploadProgress.style.display = 'block';
-      this.videoUploadFill.style.width = '35%';
+      this.videoUploadFill.style.width = '0%';
 
-      const res = await fetch(`/api/upload-video?name=${encodeURIComponent(file.name)}`, {
-        method: 'POST',
-        body: file
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/api/upload-video?name=${encodeURIComponent(file.name)}`);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            this.videoUploadFill.style.width = `${pct}%`;
+          }
+        };
+
+        xhr.onload = async () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const data = JSON.parse(xhr.responseText);
+              if (data.url) {
+                this.videoConfig.url = data.url;
+                syncBus.send({
+                  type: 'VIDEO_LOAD',
+                  config: { url: data.url, name: file.name, loop: this.videoConfig.loop }
+                });
+                await this.refreshServerVideos();
+                this.selectServerVideos.value = data.url;
+              }
+            } catch (err) {
+              console.warn('Error parsing upload response:', err);
+            }
+            resolve();
+          } else {
+            reject(new Error(`Server returned status ${xhr.status}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.send(file);
       });
-      this.videoUploadFill.style.width = '100%';
 
+      this.videoUploadFill.style.width = '100%';
       setTimeout(() => {
         this.videoUploadProgress.style.display = 'none';
         this.videoUploadFill.style.width = '0%';
       }, 700);
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.url) {
-          this.videoConfig.url = data.url;
-          syncBus.send({
-            type: 'VIDEO_LOAD',
-            config: { url: data.url, name: file.name }
-          });
-          await this.refreshServerVideos();
-          this.selectServerVideos.value = data.url;
-        }
-      }
     } catch (err) {
-      console.warn('Background server video upload failed (local blob playback still active):', err);
+      console.warn('Background server video upload failed (local playback remains active):', err);
       this.videoUploadProgress.style.display = 'none';
     }
   }
@@ -1235,8 +1290,17 @@ class DeskApp {
       if (!res.ok) return;
       const list = (await res.json()) as Array<{ name: string; url: string; size: number }>;
 
+      // Preserve any active local blob option if one exists
+      const existingLocalOpt = this.selectServerVideos.querySelector('option[data-blob-file]') as HTMLOptionElement;
+      const currentSelectedVal = this.selectServerVideos.value;
+
       this.selectServerVideos.innerHTML = '';
-      if (list.length === 0) {
+
+      if (existingLocalOpt) {
+        this.selectServerVideos.appendChild(existingLocalOpt);
+      }
+
+      if (list.length === 0 && !existingLocalOpt) {
         const opt = document.createElement('option');
         opt.value = '/videos/sample-trio.mp4';
         opt.textContent = '🎃 sample-trio.mp4 (Built-in Trio)';
@@ -1250,9 +1314,16 @@ class DeskApp {
         });
       }
 
-      // Restore selected if in list
+      // Restore selected if in list, or match by filename
       if (this.videoConfig?.url) {
-        this.selectServerVideos.value = this.videoConfig.url;
+        const matchingOpt = Array.from(this.selectServerVideos.options).find(
+          (opt) => opt.value === this.videoConfig.url || (this.videoConfig.name && opt.text.includes(this.videoConfig.name))
+        );
+        if (matchingOpt) {
+          this.selectServerVideos.value = matchingOpt.value;
+        } else if (currentSelectedVal) {
+          this.selectServerVideos.value = currentSelectedVal;
+        }
       }
     } catch (err) {
       console.warn('Failed to refresh video list:', err);
