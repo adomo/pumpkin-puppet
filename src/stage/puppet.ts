@@ -1,6 +1,6 @@
 import { PuppetSlot, CornerKey } from '../sync/channel';
 import { PuppetTransform, FaceStyle, VideoCrop, ShowMode } from '../sync/storage';
-import { faceLoader } from './face-loader';
+import { faceLoader, FaceLayerImages } from './face-loader';
 import { EffectsEngine } from './effects';
 
 export type LookDirection = 'left' | 'center' | 'right';
@@ -386,13 +386,15 @@ export class Puppet {
 
       const style = this.transform.faceStyle || (this.slot === 'left' ? 'goofy' : this.slot === 'right' ? 'sly' : 'classic');
 
-      if (style === 'custom' && faceLoader.getLayers()) {
-        this.renderCustomSvgLayers(octx);
+      const svgLayers = faceLoader.getLayers(this.slot, style);
+      if (svgLayers) {
+        this.renderCustomSvgLayers(octx, svgLayers);
       } else {
         // Render defined cartoon face layers
-        this.renderMouthLayer(octx, style);
-        this.renderEyesLayer(octx, style);
-        this.renderBrowsLayer(octx, style);
+        const baseStyle = (style === 'v2_goofy' ? 'goofy' : style === 'v2_sly' ? 'sly' : style === 'v2_classic' ? 'classic' : style) as 'classic' | 'goofy' | 'sly';
+        this.renderMouthLayer(octx, baseStyle);
+        this.renderEyesLayer(octx, baseStyle);
+        this.renderBrowsLayer(octx, baseStyle);
       }
       this.renderOverlays(octx);
 
@@ -401,7 +403,7 @@ export class Puppet {
 
       // Procedural Branching Fractal Lightning Arcs
       if (this.lightningCount > 0) {
-        const eyeX = style === 'goofy' ? 68 : style === 'sly' ? 64 : 66;
+        const eyeX = (style === 'goofy' || style === 'v2_goofy') ? 68 : (style === 'sly' || style === 'v2_sly') ? 64 : 66;
         this.effects.renderLightningArcs(octx, { x: -eyeX, y: -48 }, { x: eyeX, y: -48 }, 70);
       }
 
@@ -419,8 +421,8 @@ export class Puppet {
     }
   }
 
-  private renderCustomSvgLayers(ctx: CanvasRenderingContext2D): void {
-    const layers = faceLoader.getLayers();
+  private renderCustomSvgLayers(ctx: CanvasRenderingContext2D, layersParam?: FaceLayerImages): void {
+    const layers = layersParam || faceLoader.getLayers(this.slot, this.transform.faceStyle);
     if (!layers) return;
 
     const mouthOpen = Math.max(0, Math.min(1.0, this.mouth));

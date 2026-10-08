@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!-- Warm Golden Candle Glow for Big Oval Eyes -->
+    <radialGradient id="eyeGlowGoofy" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#fffde8" />
+      <stop offset="40%" stop-color="#ffb200" />
+      <stop offset="75%" stop-color="#e65500" />
+      <stop offset="100%" stop-color="#8a1800" />
+    </radialGradient>
+
+    <!-- Warm Smiling Cavern Mouth Glow -->
+    <radialGradient id="mouthGlowGoofy" cx="50%" cy="85%" r="70%">
+      <stop offset="0%" stop-color="#fffce8" />
+      <stop offset="35%" stop-color="#ffae00" />
+      <stop offset="70%" stop-color="#d64400" />
+      <stop offset="100%" stop-color="#140200" />
+    </radialGradient>
+  </defs>
+
+  <!-- Left Tall Oval Cartoon Eye -->
+  <g id="eye-l">
+    <ellipse cx="138" cy="146" rx="36" ry="46" 
+             fill="url(#eyeGlowGoofy)" stroke="#5c1000" stroke-width="14" />
+    <ellipse cx="138" cy="146" rx="36" ry="46" 
+             fill="none" stroke="#ff8800" stroke-width="5" />
+  </g>
+
+  <!-- Right Tall Oval Cartoon Eye -->
+  <g id="eye-r">
+    <ellipse cx="262" cy="146" rx="36" ry="46" 
+             fill="url(#eyeGlowGoofy)" stroke="#5c1000" stroke-width="14" />
+    <ellipse cx="262" cy="146" rx="36" ry="46" 
+             fill="none" stroke="#ff8800" stroke-width="5" />
+  </g>
+
+  <!-- Left Inward-Resting Cartoon Pupil (Cross-Eyed Goofy Look) -->
+  <g id="pupil-l">
+    <ellipse cx="150" cy="158" rx="14" ry="16" fill="#991500" />
+    <ellipse cx="150" cy="158" rx="9" ry="11" fill="#240300" />
+    <!-- Glossy Specular Glints -->
+    <circle cx="154" cy="153" r="3.8" fill="#ffffff" />
+    <circle cx="145" cy="162" r="1.8" fill="#ffffff" opacity="0.8" />
+  </g>
+
+  <!-- Right Inward-Resting Cartoon Pupil (Cross-Eyed Goofy Look) -->
+  <g id="pupil-r">
+    <ellipse cx="250" cy="158" rx="14" ry="16" fill="#991500" />
+    <ellipse cx="250" cy="158" rx="9" ry="11" fill="#240300" />
+    <!-- Glossy Specular Glints -->
+    <circle cx="254" cy="153" r="3.8" fill="#ffffff" />
+    <circle cx="245" cy="162" r="1.8" fill="#ffffff" opacity="0.8" />
+  </g>
+
+  <!-- Rounded Drooping Eyelids for Sleepy/Wink Expressions -->
+  <g id="lid-l">
+    <path d="M 98 126 Q 138 98 178 126 L 176 156 Q 138 168 100 156 Z" 
+          fill="#000000" stroke="#ff8800" stroke-width="3" />
+  </g>
+  <g id="lid-r">
+    <path d="M 222 126 Q 262 98 302 126 L 300 156 Q 262 168 224 156 Z" 
+          fill="#000000" stroke="#ff8800" stroke-width="3" />
+  </g>
+
+  <!-- Bouncy Floppy Cartoon Eyebrows -->
+  <g id="brow-l">
+    <path d="M 92 108 Q 136 74 182 98 Q 136 86 92 108 Z" 
+          fill="#ff8500" stroke="#5c1000" stroke-width="7" stroke-linejoin="round" />
+  </g>
+  <g id="brow-r">
+    <path d="M 308 108 Q 264 74 218 98 Q 264 86 308 108 Z" 
+          fill="#ff8500" stroke="#5c1000" stroke-width="7" stroke-linejoin="round" />
+  </g>
+
+  <!-- Wide Happy Crescent Mouth Cavity with Pooling Light -->
+  <g id="mouth-interior">
+    <path d="M 72 248 Q 200 376 328 248 Q 200 278 72 248 Z" fill="url(#mouthGlowGoofy)" />
+  </g>
+
+  <!-- Two Prominent Center Buck Teeth (Matching Photo Exactly) -->
+  <g id="teeth">
+    <!-- Left Center Buck Tooth -->
+    <rect x="172" y="246" width="24" height="34" rx="4" 
+          fill="#fffbe0" stroke="#5c1000" stroke-width="3.5" />
+    <!-- Right Center Buck Tooth -->
+    <rect x="204" y="246" width="24" height="34" rx="4" 
+          fill="#fffbe0" stroke="#5c1000" stroke-width="3.5" />
+  </g>
+
+  <!-- Dual-Stroke Outer Smiling Lips -->
+  <g id="lips">
+    <path d="M 68 248 Q 200 384 332 248 Q 200 286 68 248 Z" 
+          fill="none" stroke="#5c1000" stroke-width="16" stroke-linejoin="round" />
+    <path d="M 68 248 Q 200 384 332 248 Q 200 286 68 248 Z" 
+          fill="none" stroke="#ff8800" stroke-width="6" stroke-linejoin="round" />
+  </g>
+</svg>

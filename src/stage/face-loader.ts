@@ -1,3 +1,6 @@
+import { PuppetSlot } from '../sync/channel';
+import { FaceStyle } from '../sync/storage';
+
 export interface FaceLayerImages {
   mouthInterior?: HTMLImageElement;
   teeth?: HTMLImageElement;
@@ -14,8 +17,44 @@ export interface FaceLayerImages {
 
 export class FaceLoader {
   private customLayers: FaceLayerImages | null = null;
+  private slotLayers: Partial<Record<PuppetSlot, FaceLayerImages>> = {};
+  private v2Presets: Partial<Record<'v2_classic' | 'v2_goofy' | 'v2_sly', FaceLayerImages>> = {};
 
-  public async loadSvgString(svgString: string): Promise<FaceLayerImages> {
+  constructor() {
+    this.preloadV2Presets();
+  }
+
+  public async preloadV2Presets(): Promise<void> {
+    const presets: Array<{ key: 'v2_classic' | 'v2_goofy' | 'v2_sly'; url: string }> = [
+      { key: 'v2_classic', url: '/faces/classic_v2.svg' },
+      { key: 'v2_goofy', url: '/faces/goofy_v2.svg' },
+      { key: 'v2_sly', url: '/faces/sly_v2.svg' }
+    ];
+
+    for (const p of presets) {
+      try {
+        const resp = await fetch(p.url);
+        if (resp.ok) {
+          const text = await resp.text();
+          const layers = await this.parseSvgToLayers(text);
+          this.v2Presets[p.key] = layers;
+        }
+      } catch (err) {
+        console.warn(`Could not preload ${p.key}:`, err);
+      }
+    }
+  }
+
+  public async loadSvgString(svgString: string, slot?: PuppetSlot): Promise<FaceLayerImages> {
+    const layers = await this.parseSvgToLayers(svgString);
+    if (slot) {
+      this.slotLayers[slot] = layers;
+    }
+    this.customLayers = layers;
+    return layers;
+  }
+
+  public async parseSvgToLayers(svgString: string): Promise<FaceLayerImages> {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgString, 'image/svg+xml');
     const svgEl = doc.querySelector('svg');
@@ -78,16 +117,23 @@ export class FaceLoader {
       }
     }
 
-    this.customLayers = loadedLayers;
     return loadedLayers;
   }
 
-  public getLayers(): FaceLayerImages | null {
+  public getLayers(slot?: PuppetSlot, style?: FaceStyle): FaceLayerImages | null {
+    if (style === 'v2_classic') return this.v2Presets.v2_classic || null;
+    if (style === 'v2_goofy') return this.v2Presets.v2_goofy || null;
+    if (style === 'v2_sly') return this.v2Presets.v2_sly || null;
+
+    if (slot && this.slotLayers[slot]) {
+      return this.slotLayers[slot]!;
+    }
     return this.customLayers;
   }
 
   public clearCustom(): void {
     this.customLayers = null;
+    this.slotLayers = {};
   }
 }
 

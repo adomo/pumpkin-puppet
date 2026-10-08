@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!-- Warm Candle Core Radial Glow for Eyes -->
+    <radialGradient id="eyeGlowClassic" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#fffde0" />
+      <stop offset="35%" stop-color="#ffb000" />
+      <stop offset="75%" stop-color="#e65000" />
+      <stop offset="100%" stop-color="#991c00" />
+    </radialGradient>
+
+    <!-- Deep Cavern Candle Glow for Mouth Interior -->
+    <radialGradient id="mouthGlowClassic" cx="50%" cy="85%" r="70%">
+      <stop offset="0%" stop-color="#fffce0" />
+      <stop offset="30%" stop-color="#ffa600" />
+      <stop offset="65%" stop-color="#d44000" />
+      <stop offset="100%" stop-color="#140200" />
+    </radialGradient>
+  </defs>
+
+  <!-- Left Triangular Eye Socket + Central Nose Notch -->
+  <g id="eye-l">
+    <!-- Left Triangular Eye Cutout -->
+    <polygon points="98,172 178,162 144,104" 
+             fill="url(#eyeGlowClassic)" stroke="#5c0d00" stroke-width="14" stroke-linejoin="round" />
+    <polygon points="98,172 178,162 144,104" 
+             fill="none" stroke="#ff8000" stroke-width="5" stroke-linejoin="round" />
+    <!-- Center Nose Left Half -->
+    <polygon points="190,196 200,168 200,196" fill="url(#eyeGlowClassic)" stroke="#5c0d00" stroke-width="6" stroke-linejoin="round" />
+    <polygon points="190,196 200,168 200,196" fill="none" stroke="#ff8000" stroke-width="3" />
+  </g>
+
+  <!-- Right Triangular Eye Socket + Central Nose Notch -->
+  <g id="eye-r">
+    <!-- Right Triangular Eye Cutout -->
+    <polygon points="302,172 222,162 256,104" 
+             fill="url(#eyeGlowClassic)" stroke="#5c0d00" stroke-width="14" stroke-linejoin="round" />
+    <polygon points="302,172 222,162 256,104" 
+             fill="none" stroke="#ff8000" stroke-width="5" stroke-linejoin="round" />
+    <!-- Center Nose Right Half -->
+    <polygon points="210,196 200,168 200,196" fill="url(#eyeGlowClassic)" stroke="#5c0d00" stroke-width="6" stroke-linejoin="round" />
+    <polygon points="210,196 200,168 200,196" fill="none" stroke="#ff8000" stroke-width="3" />
+  </g>
+
+  <!-- Left Pupil with Specular Highlight Pings -->
+  <g id="pupil-l">
+    <circle cx="140" cy="148" r="14" fill="#a31400" />
+    <circle cx="140" cy="148" r="8.5" fill="#290300" />
+    <!-- Specular Glint Pings -->
+    <circle cx="144" cy="144" r="3.5" fill="#ffffff" />
+    <circle cx="136" cy="152" r="1.5" fill="#ffffff" opacity="0.75" />
+  </g>
+
+  <!-- Right Pupil with Specular Highlight Pings -->
+  <g id="pupil-r">
+    <circle cx="260" cy="148" r="14" fill="#a31400" />
+    <circle cx="260" cy="148" r="8.5" fill="#290300" />
+    <!-- Specular Glint Pings -->
+    <circle cx="264" cy="144" r="3.5" fill="#ffffff" />
+    <circle cx="256" cy="152" r="1.5" fill="#ffffff" opacity="0.75" />
+  </g>
+
+  <!-- Left Eyelid (Blink / Wink) in Pitch Black with Carved Rim -->
+  <g id="lid-l">
+    <path d="M 88 100 Q 144 80 188 100 L 182 152 Q 140 160 94 152 Z" 
+          fill="#000000" stroke="#ff8000" stroke-width="3" />
+  </g>
+
+  <!-- Right Eyelid (Blink / Wink) in Pitch Black with Carved Rim -->
+  <g id="lid-r">
+    <path d="M 212 100 Q 256 80 312 100 L 306 152 Q 260 160 218 152 Z" 
+          fill="#000000" stroke="#ff8000" stroke-width="3" />
+  </g>
+
+  <!-- Expressive Eyebrows -->
+  <g id="brow-l">
+    <polygon points="85,116 178,92 168,78 78,98" 
+             fill="#ff7a00" stroke="#5c0d00" stroke-width="8" stroke-linejoin="round" />
+  </g>
+  <g id="brow-r">
+    <polygon points="315,116 222,92 232,78 322,98" 
+             fill="#ff7a00" stroke="#5c0d00" stroke-width="8" stroke-linejoin="round" />
+  </g>
+
+  <!-- Crescent Mouth Cavity with Warm Pooling Candlelight -->
+  <g id="mouth-interior">
+    <path d="M 76 254 Q 200 376 324 254 Q 200 286 76 254 Z" fill="url(#mouthGlowClassic)" />
+  </g>
+
+  <!-- Staggered Classic Cutout Block Teeth (Matching Photo: 2 top, 1 bottom center) -->
+  <g id="teeth">
+    <!-- Top Left Block Tooth -->
+    <rect x="134" y="252" width="28" height="28" rx="3" 
+          fill="#fff5b0" stroke="#5c0d00" stroke-width="3.5" />
+    <!-- Top Right Block Tooth -->
+    <rect x="238" y="252" width="28" height="28" rx="3" 
+          fill="#fff5b0" stroke="#5c0d00" stroke-width="3.5" />
+    <!-- Bottom Center Block Tooth -->
+    <rect x="186" y="340" width="28" height="26" rx="3" 
+          fill="#fff5b0" stroke="#5c0d00" stroke-width="3.5" />
+  </g>
+
+  <!-- Dual-Stroke Outer Carved Lips -->
+  <g id="lips">
+    <path d="M 72 254 Q 200 384 328 254 Q 200 292 72 254 Z" 
+          fill="none" stroke="#5c0d00" stroke-width="16" stroke-linejoin="round" />
+    <path d="M 72 254 Q 200 384 328 254 Q 200 292 72 254 Z" 
+          fill="none" stroke="#ff8000" stroke-width="6" stroke-linejoin="round" />
+  </g>
+</svg>

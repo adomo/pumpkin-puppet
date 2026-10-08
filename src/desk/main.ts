@@ -611,6 +611,20 @@ class DeskApp {
       });
     });
 
+    // Apply Reference V2 Trio Button
+    const btnLoadV2Trio = document.getElementById('btn-load-v2-trio');
+    btnLoadV2Trio?.addEventListener('click', () => {
+      this.currentTransforms.left.faceStyle = 'v2_sly';
+      this.currentTransforms.center.faceStyle = 'v2_classic';
+      this.currentTransforms.right.faceStyle = 'v2_goofy';
+
+      syncBus.send({ type: 'SET_FACE_STYLE', slot: 'left', style: 'v2_sly' });
+      syncBus.send({ type: 'SET_FACE_STYLE', slot: 'center', style: 'v2_classic' });
+      syncBus.send({ type: 'SET_FACE_STYLE', slot: 'right', style: 'v2_goofy' });
+
+      this.selectFaceStyle.value = this.currentTransforms[this.currentFocus].faceStyle;
+    });
+
     // Transform Sliders
     this.sliderPosX.addEventListener('input', () => {
       const val = parseFloat(this.sliderPosX.value);

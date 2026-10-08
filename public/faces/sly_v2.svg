@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!-- Fierce Fiery Eye Glow -->
+    <radialGradient id="eyeGlowSly" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#fff880" />
+      <stop offset="35%" stop-color="#ff7b00" />
+      <stop offset="75%" stop-color="#cc2400" />
+      <stop offset="100%" stop-color="#6e0a00" />
+    </radialGradient>
+
+    <!-- Deep Smoldering Mouth Glow behind Comb Teeth -->
+    <radialGradient id="mouthGlowSly" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#fff8a0" />
+      <stop offset="30%" stop-color="#ff8c00" />
+      <stop offset="70%" stop-color="#c42800" />
+      <stop offset="100%" stop-color="#100100" />
+    </radialGradient>
+  </defs>
+
+  <!-- Left Sinister Hooded Eye + Half Nose Notch -->
+  <g id="eye-l">
+    <!-- Menacing Angled Slit Socket -->
+    <path d="M 82 142 Q 135 125 182 166 Q 132 188 82 142 Z" 
+          fill="url(#eyeGlowSly)" stroke="#4a0800" stroke-width="14" stroke-linejoin="round" />
+    <path d="M 82 142 Q 135 125 182 166 Q 132 188 82 142 Z" 
+          fill="none" stroke="#ff6500" stroke-width="5" stroke-linejoin="round" />
+    <!-- Center Nose Cutout (Left) -->
+    <polygon points="188,198 200,162 200,198" fill="url(#eyeGlowSly)" stroke="#4a0800" stroke-width="6" stroke-linejoin="round" />
+    <polygon points="188,198 200,162 200,198" fill="none" stroke="#ff6500" stroke-width="3" />
+  </g>
+
+  <!-- Right Sinister Hooded Eye + Half Nose Notch -->
+  <g id="eye-r">
+    <!-- Menacing Angled Slit Socket -->
+    <path d="M 318 142 Q 265 125 218 166 Q 268 188 318 142 Z" 
+          fill="url(#eyeGlowSly)" stroke="#4a0800" stroke-width="14" stroke-linejoin="round" />
+    <path d="M 318 142 Q 265 125 218 166 Q 268 188 318 142 Z" 
+          fill="none" stroke="#ff6500" stroke-width="5" stroke-linejoin="round" />
+    <!-- Center Nose Cutout (Right) -->
+    <polygon points="212,198 200,162 200,198" fill="url(#eyeGlowSly)" stroke="#4a0800" stroke-width="6" stroke-linejoin="round" />
+    <polygon points="212,198 200,162 200,198" fill="none" stroke="#ff6500" stroke-width="3" />
+  </g>
+
+  <!-- Left Intense Demon Pupil -->
+  <g id="pupil-l">
+    <ellipse cx="134" cy="154" rx="10" ry="12" fill="#8f0c00" />
+    <ellipse cx="134" cy="154" rx="6" ry="8" fill="#1c0100" />
+    <circle cx="137" cy="150" r="3" fill="#ffffff" />
+    <circle cx="131" cy="158" r="1.5" fill="#ffffff" opacity="0.7" />
+  </g>
+
+  <!-- Right Intense Demon Pupil -->
+  <g id="pupil-r">
+    <ellipse cx="266" cy="154" rx="10" ry="12" fill="#8f0c00" />
+    <ellipse cx="266" cy="154" rx="6" ry="8" fill="#1c0100" />
+    <circle cx="269" cy="150" r="3" fill="#ffffff" />
+    <circle cx="263" cy="158" r="1.5" fill="#ffffff" opacity="0.7" />
+  </g>
+
+  <!-- Hooded Eyelids in Pitch Black -->
+  <g id="lid-l">
+    <path d="M 74 130 Q 135 110 188 152 L 182 170 Q 130 156 80 152 Z" 
+          fill="#000000" stroke="#ff6500" stroke-width="3" />
+  </g>
+  <g id="lid-r">
+    <path d="M 326 130 Q 265 110 212 152 L 218 170 Q 270 156 320 152 Z" 
+          fill="#000000" stroke="#ff6500" stroke-width="3" />
+  </g>
+
+  <!-- Menacing Downward-Angled Wedge Brows -->
+  <g id="brow-l">
+    <polygon points="72,118 178,142 186,128 78,98" 
+             fill="#ff6800" stroke="#4a0800" stroke-width="8" stroke-linejoin="round" />
+  </g>
+  <g id="brow-r">
+    <polygon points="328,118 222,142 214,128 322,98" 
+             fill="#ff6800" stroke="#4a0800" stroke-width="8" stroke-linejoin="round" />
+  </g>
+
+  <!-- Broad Skull Maw Chamber -->
+  <g id="mouth-interior">
+    <path d="M 64 256 Q 200 312 336 256 Q 200 348 64 256 Z" fill="url(#mouthGlowSly)" />
+  </g>
+
+  <!-- Sinister Skull Comb Teeth (Matching Photo: vertical bars top & bottom) -->
+  <g id="teeth">
+    <!-- Top Row Vertical Teeth Bars -->
+    <rect x="96" y="254" width="12" height="24" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="126" y="260" width="13" height="26" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="156" y="264" width="14" height="28" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="187" y="266" width="14" height="29" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="218" y="266" width="14" height="29" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="248" y="264" width="14" height="28" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="278" y="260" width="13" height="26" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="306" y="254" width="12" height="24" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+
+    <!-- Bottom Row Vertical Teeth Bars -->
+    <rect x="110" y="284" width="13" height="24" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="140" y="292" width="14" height="26" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="171" y="296" width="14" height="28" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="202" y="297" width="14" height="28" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="233" y="296" width="14" height="28" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="264" y="292" width="14" height="26" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+    <rect x="294" y="284" width="13" height="24" rx="2" fill="#fff5a8" stroke="#4a0800" stroke-width="2.5" />
+  </g>
+
+  <!-- Outer Sinister Mouth Gouge & Barb Lips -->
+  <g id="lips">
+    <path d="M 58 254 Q 200 316 342 254 Q 200 354 58 254 Z" 
+          fill="none" stroke="#4a0800" stroke-width="16" stroke-linejoin="round" />
+    <path d="M 58 254 Q 200 316 342 254 Q 200 354 58 254 Z" 
+          fill="none" stroke="#ff6500" stroke-width="5" stroke-linejoin="round" />
+  </g>
+</svg>

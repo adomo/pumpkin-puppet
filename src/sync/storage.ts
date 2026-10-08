@@ -5,7 +5,7 @@ export interface CornerOffsets {
   br: [number, number];
 }
 
-export type FaceStyle = 'classic' | 'goofy' | 'sly' | 'custom';
+export type FaceStyle = 'classic' | 'goofy' | 'sly' | 'custom' | 'v2_classic' | 'v2_goofy' | 'v2_sly';
 
 export interface PuppetTransform {
   x: number;
@@ -141,7 +141,7 @@ function normalizeTransform(raw: Partial<PuppetTransform> & { scale?: number }, 
       bl: Array.isArray(raw?.corners?.bl) ? [raw.corners.bl[0] || 0, raw.corners.bl[1] || 0] : [0, 0],
       br: Array.isArray(raw?.corners?.br) ? [raw.corners.br[0] || 0, raw.corners.br[1] || 0] : [0, 0]
     },
-    faceStyle: (raw?.faceStyle === 'classic' || raw?.faceStyle === 'goofy' || raw?.faceStyle === 'sly' || raw?.faceStyle === 'custom')
+    faceStyle: (raw?.faceStyle === 'classic' || raw?.faceStyle === 'goofy' || raw?.faceStyle === 'sly' || raw?.faceStyle === 'custom' || raw?.faceStyle === 'v2_classic' || raw?.faceStyle === 'v2_goofy' || raw?.faceStyle === 'v2_sly')
       ? raw.faceStyle
       : fallback.faceStyle
   };
