@@ -1,6 +1,6 @@
 import { PuppetSlot, CornerKey } from '../sync/channel';
 import { PuppetTransform, FaceStyle, VideoCrop, ShowMode } from '../sync/storage';
-import { faceLoader, FaceLayerImages } from './face-loader';
+import { faceLoader, FaceLayerImages, RasterFaceLayers } from './face-loader';
 import { EffectsEngine } from './effects';
 
 export type LookDirection = 'left' | 'center' | 'right';
@@ -386,15 +386,20 @@ export class Puppet {
 
       const style = this.transform.faceStyle || (this.slot === 'left' ? 'goofy' : this.slot === 'right' ? 'sly' : 'classic');
 
-      const svgLayers = faceLoader.getLayers(this.slot, style);
-      if (svgLayers) {
-        this.renderCustomSvgLayers(octx, svgLayers);
+      const rasterFace = faceLoader.getRasterLayers(this.slot, style);
+      if (rasterFace) {
+        this.renderRasterFace(octx, rasterFace, style);
       } else {
-        // Render defined cartoon face layers
-        const baseStyle = (style === 'v2_goofy' ? 'goofy' : style === 'v2_sly' ? 'sly' : style === 'v2_classic' ? 'classic' : style) as 'classic' | 'goofy' | 'sly';
-        this.renderMouthLayer(octx, baseStyle);
-        this.renderEyesLayer(octx, baseStyle);
-        this.renderBrowsLayer(octx, baseStyle);
+        const svgLayers = faceLoader.getLayers(this.slot, style);
+        if (svgLayers) {
+          this.renderCustomSvgLayers(octx, svgLayers);
+        } else {
+          // Render defined cartoon face layers
+          const baseStyle = (style === 'v2_goofy' ? 'goofy' : style === 'v2_sly' ? 'sly' : style === 'v2_classic' ? 'classic' : style) as 'classic' | 'goofy' | 'sly';
+          this.renderMouthLayer(octx, baseStyle);
+          this.renderEyesLayer(octx, baseStyle);
+          this.renderBrowsLayer(octx, baseStyle);
+        }
       }
       this.renderOverlays(octx);
 
@@ -403,8 +408,9 @@ export class Puppet {
 
       // Procedural Branching Fractal Lightning Arcs
       if (this.lightningCount > 0) {
-        const eyeX = (style === 'goofy' || style === 'v2_goofy') ? 68 : (style === 'sly' || style === 'v2_sly') ? 64 : 66;
-        this.effects.renderLightningArcs(octx, { x: -eyeX, y: -48 }, { x: eyeX, y: -48 }, 70);
+        const eyeX = rasterFace ? rasterFace.eyeR.x : ((style === 'goofy' || style === 'v2_goofy') ? 68 : (style === 'sly' || style === 'v2_sly') ? 64 : 66);
+        const eyeY = rasterFace ? rasterFace.eyeR.y : -48;
+        this.effects.renderLightningArcs(octx, { x: -eyeX, y: eyeY }, { x: eyeX, y: eyeY }, 70);
       }
 
       octx.restore();
@@ -418,6 +424,124 @@ export class Puppet {
 
     if (isMappingMode && this.isFocused) {
       this.renderMappingOverlay(ctx, corners, activeCorner);
+    }
+  }
+
+  private renderRasterFace(ctx: CanvasRenderingContext2D, raster: RasterFaceLayers, style: FaceStyle): void {
+    const mouthOpen = Math.max(0, Math.min(1.0, this.mouth));
+    const candleRelY = raster.candleY - 200; // in centered [-200, 200] coordinates
+
+    // 1. Cavity Floor & Tea Light Candle Outline (authentic origin of internal flame)
+    this.effects.renderTeaLightCandle(
+      ctx,
+      0,
+      candleRelY,
+      this.candleFlicker,
+      mouthOpen,
+      this.idleTime
+    );
+
+    // 2. Interior Cavity Effects (boundary-breaking fire tongues or creeping frost)
+    if (this.interior === 'flame') {
+      this.effects.renderCavityFlame(ctx, mouthOpen, this.idleTime);
+    } else if (this.interior === 'ice' || this.isLocked || this.thawProgress > 0) {
+      this.effects.renderCavityIce(ctx, mouthOpen, this.idleTime);
+    }
+
+    // 3. Lower Jaw: Photorealistic curved slice displacement
+    if (mouthOpen < 0.005) {
+      // Mouth closed: 100% exact photographic seam alignment
+      ctx.drawImage(raster.jaw, -200, -200, 400, 400);
+    } else {
+      const dropMax = mouthOpen * 34;
+      const numSlices = 24;
+      const lx = raster.lx;
+      const rx = raster.rx;
+      const sliceW = (rx - lx) / numSlices;
+
+      // Draw jaw parts outside [lx, rx] normally
+      if (lx > 0) {
+        ctx.drawImage(raster.jaw, 0, 0, lx, 400, -200, -200, lx, 400);
+      }
+      if (rx < 400) {
+        ctx.drawImage(raster.jaw, rx, 0, 400 - rx, 400, rx - 200, -200, 400 - rx, 400);
+      }
+
+      // Draw curved slices along lower jaw arc
+      for (let i = 0; i < numSlices; i++) {
+        const sx = lx + i * sliceW;
+        const u = (i + 0.5) / numSlices;
+        const weight = Math.sin(Math.PI * u);
+        const dyOffset = dropMax * weight;
+        ctx.drawImage(raster.jaw, sx, 0, sliceW, 400, sx - 200, dyOffset - 200, sliceW, 400);
+      }
+    }
+
+    // 4. Upper Head (eyes, nose, brow, upper teeth, and anchored lip corners)
+    ctx.drawImage(raster.head, -200, -200, 400, 400);
+
+    // 5. Interactive Eyelids (Blinking, Winking, Sleep)
+    const currentBlink = (this.winkLeft || this.winkRight) ? 1.0 : this.blinkAmount;
+    if (currentBlink > 0.05) {
+      this.renderPhotoEyelids(ctx, raster, currentBlink);
+    }
+
+    // 6. Goofy Eye Pupil Tracking (Darting with speech saccades and look direction)
+    if (style === 'v2_goofy') {
+      this.renderGoofyPhotoPupils(ctx, raster);
+    }
+  }
+
+  private renderPhotoEyelids(ctx: CanvasRenderingContext2D, raster: RasterFaceLayers, blink: number): void {
+    ctx.save();
+    const eyes = [
+      { pt: raster.eyeL, isWinking: this.winkLeft },
+      { pt: raster.eyeR, isWinking: this.winkRight }
+    ];
+
+    for (const eye of eyes) {
+      const b = (eye.isWinking || this.isAsleep) ? 1.0 : blink;
+      if (b <= 0.05) continue;
+
+      ctx.save();
+      ctx.translate(eye.pt.x, eye.pt.y);
+      const lidH = 46 * b;
+
+      // Carved eyelid cover
+      ctx.fillStyle = '#080100';
+      ctx.beginPath();
+      ctx.rect(-34, -30, 68, lidH);
+      ctx.fill();
+
+      // Glowing carved lip along bottom edge of eyelid
+      ctx.strokeStyle = '#ea580c';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(-32, -30 + lidH);
+      ctx.quadraticCurveTo(0, -30 + lidH + 4, 32, -30 + lidH);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  private renderGoofyPhotoPupils(ctx: CanvasRenderingContext2D, raster: RasterFaceLayers): void {
+    const pupilBaseX = this.lookDirection === 'left' ? -12 : (this.lookDirection === 'right' ? 12 : 0);
+    const pupilX = pupilBaseX + this.saccadeOffset.x;
+    const pupilY = this.saccadeOffset.y;
+    if (Math.abs(pupilX) > 1 || Math.abs(pupilY) > 1) {
+      ctx.save();
+      ctx.fillStyle = '#0a0100';
+      // Left eye pupil shift
+      ctx.beginPath();
+      ctx.arc(raster.eyeL.x + 8 + pupilX * 0.4, raster.eyeL.y + pupilY * 0.4, 7, 0, Math.PI * 2);
+      ctx.fill();
+      // Right eye pupil shift
+      ctx.beginPath();
+      ctx.arc(raster.eyeR.x - 8 + pupilX * 0.4, raster.eyeR.y + pupilY * 0.4, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
   }
 
@@ -841,8 +965,8 @@ export class Puppet {
     grad.addColorStop(0, `rgba(255, 230, 90, ${Math.min(1, flicker * 0.9)})`);
     grad.addColorStop(0.5, `rgba(255, 90, 0, ${Math.min(1, flicker * 0.75)})`);
     grad.addColorStop(1, 'rgba(40, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(-160, 30, 320, 170);
+    // Tea Light Candle Outline (origin of flame)
+    this.effects.renderTeaLightCandle(ctx, 0, 100 + jawDrop * 0.35, flicker, mouthOpen, this.idleTime);
 
     // Interior Effects (Flame / Ice)
     if (this.interior === 'flame') {
@@ -1022,32 +1146,12 @@ export class Puppet {
   private renderOverlays(ctx: CanvasRenderingContext2D): void {
     if (this.overlay === 'eye-flames') {
       const style = this.transform.faceStyle || 'classic';
-      const eyeX = style === 'goofy' ? 68 : style === 'sly' ? 64 : 66;
-      this.renderEyeFlames(ctx, -eyeX, -48);
-      this.renderEyeFlames(ctx, eyeX, -48);
+      const rasterFace = faceLoader.getRasterLayers(this.slot, style);
+      const eyeX = rasterFace ? rasterFace.eyeR.x : (style === 'goofy' ? 68 : style === 'sly' ? 64 : 66);
+      const eyeY = rasterFace ? rasterFace.eyeR.y : -48;
+      this.effects.renderEyeFlames(ctx, -eyeX, eyeY, this.idleTime);
+      this.effects.renderEyeFlames(ctx, eyeX, eyeY, this.idleTime);
     }
-  }
-
-  private renderEyeFlames(ctx: CanvasRenderingContext2D, cx: number, cy: number): void {
-    ctx.save();
-    ctx.globalCompositeOperation = 'lighter';
-    const time = this.idleTime * 14;
-    for (let i = 0; i < 6; i++) {
-      const fx = cx + Math.sin(time + i * 2.2) * 14;
-      const fy = cy - 18 - i * 14 - Math.cos(time + i * 1.5) * 8;
-      const rad = 14 + Math.sin(time + i) * 6;
-
-      const grad = ctx.createRadialGradient(fx, fy, 2, fx, fy, rad);
-      grad.addColorStop(0, 'rgba(255, 255, 200, 0.98)');
-      grad.addColorStop(0.4, 'rgba(255, 140, 0, 0.85)');
-      grad.addColorStop(1, 'rgba(200, 20, 0, 0)');
-
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(fx, fy, rad, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
   }
 
   // --- Keystone Bilinear Mesh Warper ---

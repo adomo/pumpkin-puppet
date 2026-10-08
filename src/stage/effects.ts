@@ -1,4 +1,5 @@
 // High-Performance Visual Effects & Particle Engine for Projection Mapping
+// Features: Boundary-Breaking Volumetric VFX (Flames, Smoke, Frost, Lightning) + Authentic Tea Light Candle Outline
 
 export interface Particle {
   x: number;
@@ -44,46 +45,51 @@ export class EffectsEngine {
   constructor() {}
 
   public update(dt: number, isFlaming: boolean, hasSmoke: boolean, isSoul: boolean): void {
-    // 1. Fire Embers & Sparks Emitter
+    // 1. Boundary-Breaking Fire Embers & Sparks Emitter
     if (isFlaming) {
-      // Emit floating embers from mouth cavity (center (0, 75))
-      const count = Math.random() < 0.6 ? 2 : 1;
+      // Emit floating buoyant embers that drift high past the stem into the night air
+      const count = Math.random() < 0.75 ? 3 : 1;
       for (let i = 0; i < count; i++) {
         this.particles.push({
-          x: (Math.random() - 0.5) * 80,
-          y: 70 + (Math.random() - 0.5) * 20,
-          vx: (Math.random() - 0.5) * 45,
-          vy: -60 - Math.random() * 80,
-          size: 2 + Math.random() * 3.5,
-          maxSize: 4,
+          x: (Math.random() - 0.5) * 90,
+          y: 65 + (Math.random() - 0.5) * 20,
+          vx: (Math.random() - 0.5) * 55,
+          vy: -90 - Math.random() * 110, // Fast buoyant lift past the pumpkin stem
+          size: 2.2 + Math.random() * 4,
+          maxSize: 4.5,
           alpha: 1.0,
           life: 0,
-          maxLife: 1.2 + Math.random() * 1.0,
+          maxLife: 1.5 + Math.random() * 1.2,
           type: 'ember',
-          color: Math.random() > 0.4 ? '#ff9500' : '#ffea00',
+          color: Math.random() > 0.35 ? '#ff9500' : (Math.random() > 0.5 ? '#ffea00' : '#ff4500'),
           wobble: Math.random() * Math.PI * 2,
-          wobbleSpeed: 4 + Math.random() * 6
+          wobbleSpeed: 4.5 + Math.random() * 7
         });
       }
     }
 
-    // 2. Smoke Clouds Emitter
+    // 2. Boundary-Breaking Heavy Cascading Smoke / Fog
     if (hasSmoke) {
-      this.particles.push({
-        x: (Math.random() - 0.5) * 40,
-        y: 65 + (Math.random() - 0.5) * 15,
-        vx: (Math.random() - 0.5) * 25,
-        vy: -40 - Math.random() * 35,
-        size: 14 + Math.random() * 10,
-        maxSize: 55 + Math.random() * 25,
-        alpha: 0.75,
-        life: 0,
-        maxLife: 1.8 + Math.random() * 0.8,
-        type: 'smoke',
-        color: '#8b8b99',
-        rotation: Math.random() * Math.PI * 2,
-        vRot: (Math.random() - 0.5) * 1.5
-      });
+      // 2a. Heavy dry-ice fog pouring DOWNWARD over the chin onto the porch / table
+      const count = Math.random() < 0.65 ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        const isFalling = Math.random() < 0.65;
+        this.particles.push({
+          x: (Math.random() - 0.5) * 50,
+          y: isFalling ? 75 + Math.random() * 15 : 60,
+          vx: (Math.random() - 0.5) * (isFalling ? 55 : 30),
+          vy: isFalling ? 42 + Math.random() * 45 : -35 - Math.random() * 25, // Downward waterfall roll or rising wisp
+          size: 15 + Math.random() * 10,
+          maxSize: 65 + Math.random() * 30,
+          alpha: 0.8,
+          life: 0,
+          maxLife: 2.0 + Math.random() * 1.0,
+          type: 'smoke',
+          color: '#8b8b99',
+          rotation: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 1.4
+        });
+      }
     }
 
     // 3. Ghost / Soul Wisp Emitter & Physics
@@ -143,13 +149,15 @@ export class EffectsEngine {
         p.wobble = (p.wobble || 0) + (p.wobbleSpeed || 5) * dt;
         p.x += (p.vx + Math.sin(p.wobble) * 22) * dt;
         p.y += p.vy * dt;
-        p.alpha = 1.0 - Math.pow(progress, 1.8);
-        p.size = Math.max(0.5, p.size * (1 - dt * 0.4));
+        p.alpha = 1.0 - Math.pow(progress, 1.6);
+        p.size = Math.max(0.6, p.size * (1 - dt * 0.35));
       } else if (p.type === 'smoke') {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
+        // Fog rolls horizontally as it spreads out
+        p.vx *= (1 + dt * 0.3);
         p.size += (p.maxSize - p.size) * (dt * 1.6);
-        p.alpha = Math.max(0, (1.0 - progress) * 0.55);
+        p.alpha = Math.max(0, (1.0 - progress) * 0.6);
         if (p.rotation !== undefined && p.vRot !== undefined) {
           p.rotation += p.vRot * dt;
         }
@@ -186,104 +194,361 @@ export class EffectsEngine {
     }, 120);
   }
 
-  // --- 1. RENDER INTERNAL CAVITY EFFECTS (Clipped inside mouth) ---
+  // --- 1. RENDER AUTHENTIC TEA LIGHT CANDLE OUTLINE & FLAME ORIGIN ---
 
-  public renderCavityFlame(ctx: CanvasRenderingContext2D, open: number, idleTime: number): void {
+  public renderTeaLightCandle(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    candleFlicker: number,
+    open: number,
+    idleTime: number
+  ): void {
+    ctx.save();
+
+    // 1. Warm radial ambient light cast from candle onto cavity floor & walls
+    const lightRad = (75 + open * 35) * candleFlicker;
+    const lightGrad = ctx.createRadialGradient(cx, cy - 8, 2, cx, cy - 8, lightRad);
+    lightGrad.addColorStop(0, `rgba(255, 235, 120, ${Math.min(1.0, 0.95 * candleFlicker)})`);
+    lightGrad.addColorStop(0.35, `rgba(255, 140, 20, ${Math.min(1.0, 0.75 * candleFlicker)})`);
+    lightGrad.addColorStop(0.7, `rgba(180, 50, 0, ${Math.min(1.0, 0.45 * candleFlicker)})`);
+    lightGrad.addColorStop(1, 'rgba(40, 5, 0, 0)');
+    ctx.fillStyle = lightGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - 8, lightRad * 1.3, lightRad * 0.9, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. The Tea Light Cup Body (thin aluminum/acrylic cylinder)
+    const cupW = 36;
+    const cupH = 10;
+    const rimH = 9;
+
+    // Cup shadow at base
+    ctx.fillStyle = 'rgba(10, 2, 0, 0.85)';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + cupH + 1, cupW * 0.52, rimH * 0.52, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cup cylinder body
+    const metalGrad = ctx.createLinearGradient(cx - cupW / 2, cy, cx + cupW / 2, cy);
+    metalGrad.addColorStop(0, '#52525b');
+    metalGrad.addColorStop(0.25, '#a1a1aa');
+    metalGrad.addColorStop(0.5, '#e4e4e7');
+    metalGrad.addColorStop(0.75, '#71717a');
+    metalGrad.addColorStop(1, '#3f3f46');
+
+    ctx.fillStyle = metalGrad;
+    ctx.beginPath();
+    ctx.rect(cx - cupW / 2, cy, cupW, cupH);
+    ctx.fill();
+
+    // Cup bottom rounded base
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + cupH, cupW / 2, rimH / 2, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#3f3f46';
+    ctx.fill();
+    ctx.strokeStyle = '#a1a1aa';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 3. Cup top metallic rim ellipse
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, cupW / 2, rimH / 2, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#27272a';
+    ctx.fill();
+    ctx.strokeStyle = '#e4e4e7';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    // Amber rim glow reflection
+    ctx.strokeStyle = 'rgba(251, 191, 36, 0.85)';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, cupW / 2 - 0.8, rimH / 2 - 0.8, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // 4. Translucent Paraffin Wax Pool inside cup
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, cupW / 2 - 2, rimH / 2 - 1.5, 0, 0, Math.PI * 2);
+    const waxGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, cupW / 2 - 2);
+    waxGrad.addColorStop(0, '#fef3c7');
+    waxGrad.addColorStop(0.65, '#fde68a');
+    waxGrad.addColorStop(1, '#d97706');
+    ctx.fillStyle = waxGrad;
+    ctx.fill();
+
+    // 5. Braided Dark Wick
+    const wickH = 6.5;
+    ctx.strokeStyle = '#18181b';
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx, cy - wickH);
+    ctx.stroke();
+
+    // Red ember glow at wick tip
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(cx, cy - wickH, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 6. Dancing Organic Candle Flame Teardrop
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
 
-    const time = idleTime * 11;
-    const brightness = Math.min(1.0, open * 1.4 + 0.4);
+    const sway = Math.sin(idleTime * 14.2) * 2.2 + Math.cos(idleTime * 23.5) * 1.2;
+    const flameH = (19 + Math.sin(idleTime * 17.8) * 3) * candleFlicker;
+    const flameW = 8.5 * (0.9 + candleFlicker * 0.1);
+    const wickTipY = cy - wickH;
+    const flameTipY = wickTipY - flameH;
 
-    // Dynamic Multi-tier animated flame tongues
-    for (let layer = 0; layer < 3; layer++) {
-      const tongueCount = 6;
-      for (let i = 0; i < tongueCount; i++) {
-        const u = i / (tongueCount - 1);
-        const baseX = (u - 0.5) * 160;
-        const wave = Math.sin(time + i * 1.7 + layer) * 18;
-        const flameHeight = 45 + open * 55 + Math.cos(time * 1.3 + i) * 18 + (2 - layer) * 15;
+    // Translucent blue foot at the base of the flame
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.75)';
+    ctx.beginPath();
+    ctx.ellipse(cx, wickTipY - 1, 4.5, 2.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outer golden-amber luminous envelope
+    const flameGrad = ctx.createRadialGradient(cx + sway * 0.4, wickTipY - flameH * 0.4, 2, cx + sway * 0.2, wickTipY - flameH * 0.45, flameH * 0.85);
+    flameGrad.addColorStop(0, 'rgba(255, 255, 220, 1.0)');
+    flameGrad.addColorStop(0.3, 'rgba(255, 190, 40, 0.95)');
+    flameGrad.addColorStop(0.7, 'rgba(245, 100, 10, 0.75)');
+    flameGrad.addColorStop(1, 'rgba(200, 30, 0, 0)');
+
+    ctx.fillStyle = flameGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - flameW, wickTipY);
+    ctx.bezierCurveTo(cx - flameW * 1.1, wickTipY - flameH * 0.35, cx + sway - flameW * 0.3, flameTipY + flameH * 0.25, cx + sway, flameTipY);
+    ctx.bezierCurveTo(cx + sway + flameW * 0.3, flameTipY + flameH * 0.25, cx + flameW * 1.1, wickTipY - flameH * 0.35, cx + flameW, wickTipY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Incandescent white-hot inner teardrop core
+    const coreH = flameH * 0.58;
+    const coreW = flameW * 0.48;
+    ctx.fillStyle = 'rgba(255, 255, 245, 0.98)';
+    ctx.beginPath();
+    ctx.moveTo(cx - coreW, wickTipY);
+    ctx.bezierCurveTo(cx - coreW, wickTipY - coreH * 0.4, cx + sway * 0.6 - 1, wickTipY - coreH + 1, cx + sway * 0.6, wickTipY - coreH);
+    ctx.bezierCurveTo(cx + sway * 0.6 + 1, wickTipY - coreH + 1, cx + coreW, wickTipY - coreH * 0.4, cx + coreW, wickTipY);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // --- 2. BOUNDARY-BREAKING FLAMES: ERUPTING OVER LIPS, CHEEKS & FOREHEAD ---
+
+  public renderCavityFlame(ctx: CanvasRenderingContext2D, open: number, idleTime: number): void {
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+
+    const time = idleTime * 12;
+    const brightness = Math.min(1.0, open * 1.4 + 0.45);
+
+    // Dynamic Multi-tier boundary-breaking fire tongues climbing up past nose & forehead
+    const layers = [
+      { tongues: 7, baseSpread: 170, hMult: 1.25, c1: '255, 255, 220', c2: '255, 200, 60', c3: '255, 100, 0' },
+      { tongues: 9, baseSpread: 210, hMult: 1.5, c1: '255, 180, 20', c2: '255, 90, 0', c3: '180, 20, 0' },
+      { tongues: 11, baseSpread: 240, hMult: 1.85, c1: '255, 100, 0', c2: '200, 30, 0', c3: '80, 0, 0' }
+    ];
+
+    for (let lIdx = 0; lIdx < layers.length; lIdx++) {
+      const cfg = layers[lIdx];
+      for (let i = 0; i < cfg.tongues; i++) {
+        const u = i / (cfg.tongues - 1);
+        const baseX = (u - 0.5) * cfg.baseSpread;
+        const wave = Math.sin(time + i * 1.6 + lIdx) * 22;
+        // Tall boundary-breaking height that climbs UP over the lips, past nose, toward forehead
+        const flameHeight = (65 + open * 75 + Math.cos(time * 1.4 + i) * 22) * cfg.hMult;
         const flameX = baseX + wave;
-        const flameY = 95 - flameHeight;
+        const flameY = 95 - flameHeight; // Climbs from mouth (y=95) up to y=-70..-130!
 
-        const grad = ctx.createRadialGradient(flameX, flameY, 4, flameX, flameY + 15, flameHeight * 0.85);
-        if (layer === 0) {
-          // Inner core white-hot incandescent plasma
-          grad.addColorStop(0, `rgba(255, 255, 230, ${brightness})`);
-          grad.addColorStop(0.35, `rgba(255, 220, 80, ${brightness * 0.9})`);
-          grad.addColorStop(1, 'rgba(255, 120, 0, 0)');
-        } else if (layer === 1) {
-          // Mid vibrant amber flame
-          grad.addColorStop(0, `rgba(255, 180, 0, ${brightness * 0.85})`);
-          grad.addColorStop(0.55, `rgba(255, 80, 0, ${brightness * 0.7})`);
-          grad.addColorStop(1, 'rgba(200, 0, 0, 0)');
-        } else {
-          // Outer crimson roar
-          grad.addColorStop(0, `rgba(255, 90, 0, ${brightness * 0.7})`);
-          grad.addColorStop(0.65, `rgba(180, 20, 0, ${brightness * 0.5})`);
-          grad.addColorStop(1, 'rgba(80, 0, 0, 0)');
-        }
+        const grad = ctx.createRadialGradient(flameX, flameY, 4, flameX, flameY + flameHeight * 0.4, flameHeight * 0.9);
+        grad.addColorStop(0, `rgba(${cfg.c1}, ${brightness * 0.95})`);
+        grad.addColorStop(0.4, `rgba(${cfg.c2}, ${brightness * 0.8})`);
+        grad.addColorStop(1, `rgba(${cfg.c3}, 0)`);
 
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.moveTo(baseX - 25, 105);
-        ctx.quadraticCurveTo(flameX + wave * 0.5, flameY + flameHeight * 0.5, flameX, flameY);
-        ctx.quadraticCurveTo(flameX - wave * 0.5, flameY + flameHeight * 0.5, baseX + 25, 105);
+        ctx.moveTo(baseX - 30, 95);
+        ctx.quadraticCurveTo(flameX + wave * 0.6, flameY + flameHeight * 0.5, flameX, flameY);
+        ctx.quadraticCurveTo(flameX - wave * 0.6, flameY + flameHeight * 0.5, baseX + 30, 95);
         ctx.fill();
       }
     }
 
+    // Dynamic light spill: warm orange aura casting across the entire physical pumpkin skin
+    const rindGlow = ctx.createRadialGradient(0, 40, 20, 0, 40, 200);
+    rindGlow.addColorStop(0, `rgba(255, 150, 0, ${0.45 * brightness})`);
+    rindGlow.addColorStop(0.5, `rgba(220, 60, 0, ${0.25 * brightness})`);
+    rindGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = rindGlow;
+    ctx.beginPath();
+    ctx.arc(0, 40, 200, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.restore();
   }
+
+  // --- 3. BOUNDARY-BREAKING EYE FLAMES: BLOWTORCH JETS SHOOTING PAST TEMPLES ---
+
+  public renderEyeFlames(ctx: CanvasRenderingContext2D, cx: number, cy: number, idleTime: number): void {
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    const time = idleTime * 15;
+
+    // Direct fire jets curling outward past temples into open air
+    const isRight = cx > 0;
+    const templeDirection = isRight ? 1 : -1;
+
+    for (let i = 0; i < 7; i++) {
+      // Fire jets shoot outward sideways and upward
+      const jetProgress = i / 6;
+      const fx = cx + templeDirection * (jetProgress * 65 + Math.sin(time + i * 1.8) * 16);
+      const fy = cy - jetProgress * 95 - Math.cos(time + i * 1.3) * 12;
+      const rad = 16 + Math.sin(time + i) * 7;
+
+      const grad = ctx.createRadialGradient(fx, fy, 2, fx, fy, rad);
+      grad.addColorStop(0, 'rgba(255, 255, 220, 0.98)');
+      grad.addColorStop(0.35, 'rgba(255, 160, 0, 0.88)');
+      grad.addColorStop(0.7, 'rgba(220, 40, 0, 0.5)');
+      grad.addColorStop(1, 'rgba(150, 0, 0, 0)');
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(fx, fy, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  // --- 4. BOUNDARY-BREAKING CRYOGENIC FREEZE: CREEPING FROST DENDRITES & HANGING ICICLES ---
 
   public renderCavityIce(ctx: CanvasRenderingContext2D, open: number, idleTime: number): void {
     ctx.save();
-    // Cold cryogenic blue glow
-    const grad = ctx.createLinearGradient(0, 40, 0, 120 + open * 40);
-    grad.addColorStop(0, 'rgba(20, 120, 255, 0.75)');
-    grad.addColorStop(0.5, 'rgba(100, 220, 255, 0.85)');
-    grad.addColorStop(1, 'rgba(210, 245, 255, 0.95)');
+
+    // 1. Cryogenic bioluminescent cyan-blue interior glow
+    const grad = ctx.createRadialGradient(0, 75, 10, 0, 75, 150 + open * 50);
+    grad.addColorStop(0, 'rgba(220, 250, 255, 0.95)');
+    grad.addColorStop(0.4, 'rgba(56, 189, 248, 0.85)');
+    grad.addColorStop(0.8, 'rgba(3, 105, 161, 0.6)');
+    grad.addColorStop(1, 'rgba(2, 44, 80, 0)');
 
     ctx.fillStyle = grad;
-    ctx.fillRect(-150, 40, 300, 150);
+    ctx.beginPath();
+    ctx.arc(0, 75, 160, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Procedural crystalline frost icicles hanging from upper mouth
+    // 2. Hanging Sharp Crystalline Icicles from upper mouth & lower chin
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    const time = idleTime * 2;
-    for (let x = -100; x <= 100; x += 18) {
-      const len = 22 + Math.sin(x * 12.3 + time) * 12 + ((x % 36 === 0) ? 14 : 0);
+    const time = idleTime * 2.2;
+
+    // Upper mouth icicles
+    for (let x = -110; x <= 110; x += 16) {
+      const len = 28 + Math.sin(x * 12.3 + time) * 14 + ((x % 32 === 0) ? 18 : 0);
       ctx.beginPath();
-      ctx.moveTo(x - 5, 52);
-      ctx.lineTo(x, 52 + len);
-      ctx.lineTo(x + 5, 52);
-      ctx.fillStyle = 'rgba(220, 250, 255, 0.9)';
+      ctx.moveTo(x - 5, 50);
+      ctx.lineTo(x, 50 + len);
+      ctx.lineTo(x + 5, 50);
+      ctx.fillStyle = 'rgba(225, 250, 255, 0.92)';
       ctx.fill();
       ctx.stroke();
 
-      // Sparkling frost ping dot
-      if ((Math.sin(time * 3 + x) > 0.7)) {
+      // Sparkling diamond glint
+      if (Math.sin(time * 3.5 + x) > 0.65) {
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(x, 52 + len + 2, 2.5, 0, Math.PI * 2);
+        ctx.arc(x, 50 + len + 2, 2.8, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
+    // Lower chin icicles (Hanging DOWN outside the pumpkin toward the table!)
+    for (let x = -85; x <= 85; x += 22) {
+      const chinLen = 22 + Math.cos(x * 9.1 + time) * 12;
+      ctx.beginPath();
+      ctx.moveTo(x - 4, 115);
+      ctx.lineTo(x, 115 + chinLen);
+      ctx.lineTo(x + 4, 115);
+      ctx.fillStyle = 'rgba(210, 245, 255, 0.85)';
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // 3. Creeping Frost Dendrites crawling OUTWARD across pumpkin rind
+    this.renderFrostDendrites(ctx, time);
+
     ctx.restore();
   }
 
-  // --- 2. RENDER VENTING & PROJECTED UNCLIPPED PARTICLES ---
+  private renderFrostDendrites(ctx: CanvasRenderingContext2D, time: number): void {
+    ctx.save();
+    const shimmer = 0.75 + Math.sin(time * 3.2) * 0.15;
+    ctx.strokeStyle = `rgba(215, 245, 255, ${shimmer})`;
+    ctx.lineWidth = 1.8;
+    ctx.lineCap = 'round';
+
+    // Dendrite clusters crawling out from mouth corners and eye corners
+    const origins = [
+      { x: -120, y: 70, angle: Math.PI * 0.95 },
+      { x: 120, y: 70, angle: Math.PI * 0.05 },
+      { x: -80, y: -60, angle: Math.PI * 0.65 },
+      { x: 80, y: -60, angle: Math.PI * 0.35 }
+    ];
+
+    for (const orig of origins) {
+      this.drawDendriteBranch(ctx, orig.x, orig.y, orig.angle, 35, 3);
+    }
+
+    // Glacial cyan rim aura enveloping pumpkin contour
+    ctx.strokeStyle = `rgba(56, 189, 248, ${0.4 + Math.cos(time * 2.1) * 0.1})`;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(0, 20, 185, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  private drawDendriteBranch(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    angle: number,
+    len: number,
+    depth: number
+  ): void {
+    if (depth <= 0 || len < 6) return;
+
+    const x2 = x + Math.cos(angle) * len;
+    const y2 = y + Math.sin(angle) * len;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    // Secondary crystalline forks
+    this.drawDendriteBranch(ctx, x2, y2, angle + 0.5, len * 0.65, depth - 1);
+    this.drawDendriteBranch(ctx, x2, y2, angle - 0.5, len * 0.65, depth - 1);
+  }
+
+  // --- 5. RENDER VENTING PARTICLES (CASCADING FOG & BUOYANT EMBERS) ---
 
   public renderVentingParticles(ctx: CanvasRenderingContext2D): void {
     if (this.particles.length === 0 && !this.ghostWisp && this.shockwaves.length === 0) return;
 
     ctx.save();
 
-    // 1. Render Billowing Smoke Puffs
+    // 1. Render Billowing Heavy Fog / Smoke
     for (const p of this.particles) {
       if (p.type === 'smoke') {
         ctx.save();
@@ -291,9 +556,17 @@ export class EffectsEngine {
         if (p.rotation !== undefined) ctx.rotate(p.rotation);
 
         const grad = ctx.createRadialGradient(0, 0, p.size * 0.15, 0, 0, p.size);
-        grad.addColorStop(0, `rgba(180, 175, 195, ${p.alpha * 0.8})`);
-        grad.addColorStop(0.5, `rgba(110, 105, 125, ${p.alpha * 0.5})`);
-        grad.addColorStop(1, 'rgba(40, 35, 50, 0)');
+        // Particles near mouth (y < 95) underlit with amber candle glow!
+        if (p.y < 95) {
+          grad.addColorStop(0, `rgba(255, 180, 80, ${p.alpha * 0.75})`);
+          grad.addColorStop(0.4, `rgba(200, 140, 90, ${p.alpha * 0.55})`);
+          grad.addColorStop(1, 'rgba(80, 50, 40, 0)');
+        } else {
+          // Cascading cool ghost fog on chin and porch
+          grad.addColorStop(0, `rgba(210, 215, 230, ${p.alpha * 0.75})`);
+          grad.addColorStop(0.5, `rgba(130, 135, 155, ${p.alpha * 0.45})`);
+          grad.addColorStop(1, 'rgba(40, 40, 55, 0)');
+        }
 
         ctx.fillStyle = grad;
         ctx.beginPath();
@@ -306,7 +579,7 @@ export class EffectsEngine {
     // 2. Additive Blending for Embers, Shockwaves, and Ghosts
     ctx.globalCompositeOperation = 'lighter';
 
-    // Embers & Sparks
+    // Rising Buoyant Embers drifting past pumpkin stem
     for (const p of this.particles) {
       if (p.type === 'ember') {
         ctx.save();
@@ -345,7 +618,6 @@ export class EffectsEngine {
     if (this.ghostWisp && this.ghostWisp.active) {
       const gw = this.ghostWisp;
 
-      // Draw Ribbon Trail
       for (let i = 0; i < gw.trail.length - 1; i++) {
         const pt = gw.trail[i];
         const next = gw.trail[i + 1];
@@ -382,7 +654,7 @@ export class EffectsEngine {
     ctx.restore();
   }
 
-  // --- 3. RENDER PROCEDURAL BRANCHING LIGHTNING ---
+  // --- 6. BOUNDARY-BREAKING HIGH-VOLTAGE LIGHTNING DISCHARGES ---
 
   public renderLightningArcs(
     ctx: CanvasRenderingContext2D,
@@ -393,18 +665,30 @@ export class EffectsEngine {
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
 
-    // Bolt 1: Jumping directly between the two pupils
+    // 1. Bolt bridging directly between the two eyes
     this.drawFractalBolt(ctx, leftEye.x, leftEye.y, rightEye.x, rightEye.y, 4, 22);
 
-    // Bolt 2: Arcing from left eye down to mouth
+    // 2. Bolt arcing from left eye down to mouth
     if (Math.random() > 0.25) {
       this.drawFractalBolt(ctx, leftEye.x, leftEye.y, -35, mouthY, 3, 18);
     }
 
-    // Bolt 3: Arcing from right eye down to mouth
+    // 3. Bolt arcing from right eye down to mouth
     if (Math.random() > 0.25) {
       this.drawFractalBolt(ctx, rightEye.x, rightEye.y, 35, mouthY, 3, 18);
     }
+
+    // 4. BOUNDARY-BREAKING AIR DISCHARGES: Shooting outward past cheeks & temples into open dark space!
+    // Left temple discharge
+    this.drawFractalBolt(ctx, leftEye.x, leftEye.y, -185, leftEye.y + (Math.random() - 0.5) * 45, 4, 26);
+    // Right temple discharge
+    this.drawFractalBolt(ctx, rightEye.x, rightEye.y, 185, rightEye.y + (Math.random() - 0.5) * 45, 4, 26);
+
+    // 5. Strobe flash on uncarved physical pumpkin skin
+    ctx.fillStyle = 'rgba(216, 180, 254, 0.22)';
+    ctx.beginPath();
+    ctx.arc(0, 20, 190, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }
@@ -420,7 +704,7 @@ export class EffectsEngine {
   ): void {
     const points = this.generateLightningPoints(x1, y1, x2, y2, depth, displacement);
 
-    // Pass 1: Outer Neon Violet/Cyan Corona Glow
+    // Pass 1: Outer Neon Violet Corona Glow
     ctx.strokeStyle = '#a855f7';
     ctx.lineWidth = 9;
     ctx.lineCap = 'round';
